@@ -1,0 +1,303 @@
+/* =========================
+   🌍 GLOBAL
+========================= */
+
+body {
+  font-family: Arial;
+  text-align: center;
+  background: linear-gradient(135deg, #4b71ca, #4e6996);
+  color: white;
+  padding-bottom: 50px;
+}
+
+h1 {
+  margin-top: 15px;
+}
+
+/* =========================
+   🎛️ BOUTONS
+========================= */
+
+.carte {
+  width: 280px;
+  height: 65px;
+  margin: 10px auto;
+  font-size: 18px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  display: block;
+
+  background: #334155;
+  color: white;
+  transition: 0.2s;
+}
+
+.carte:hover {
+  background: #475569;
+  transform: scale(1.03);
+}
+
+button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+/* =========================
+   🪟 MODALES
+========================= */
+
+.modal {
+  display: none;
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background: rgba(0,0,0,0.7);
+}
+
+/* =========================
+   📦 BOX
+========================= */
+
+.box {
+  background: #1e293b;
+  color: white;
+  width: 450px;
+  margin: 70px auto;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+/* =========================
+   👥 JOUEURS
+========================= */
+
+#playerInput {
+  width: 100%;
+  max-width: 300px;
+  display: block;
+  margin: 10px auto;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  text-align: center;
+}
+
+#playerInput:focus {
+  outline: none;
+  border: 2px solid #2c7be5;
+}
+
+#playerList li,
+#playersBottomList li {
+  color: white;
+  padding: 3px;
+  text-align: left;
+}
+
+/* =========================
+   📍 BOX JOUEURS FIXE
+========================= */
+
+#playersBottomBox {
+  position: fixed;
+  bottom: 60px;
+  right: 10px;
+  width: 220px;
+
+  background: #1e293b;
+  color: white;
+
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 10px;
+
+  text-align: left;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+#playersBottomBox strong {
+  color: #facc15;
+}
+
+/* =========================
+   🏆 PODIUM
+========================= */
+
+.podium {
+  padding:10px;
+  border-radius:10px;
+  text-align:center;
+  width:100px;
+  font-weight:bold;
+}
+
+.gold { background:#ffd700; }
+.silver { background:#c0c0c0; }
+.bronze { background:#cd7f32; }
+
+/* =========================
+   📊 PROGRESS BAR
+========================= */
+
+.progress {
+  height:8px;
+  background:#000000;
+  border-radius:5px;
+  overflow:hidden;
+}
+
+.progress-bar {
+  height:100%;
+  background:#4f46e5;
+}
+
+/* =========================
+   ⚽ SCORE
+========================= */
+
+.blue {
+  background: #1e40af;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 10px 0;
+  color: white;
+}
+
+.red {
+  background: #b91c1c;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 10px 0;
+  color: white;
+}
+
+/* =========================
+   📌 ACCORDION
+========================= */
+
+.accordion {
+  width: 100%;
+  padding: 12px;
+  margin-top: 5px;
+  font-size: 16px;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+
+  background: #334155;
+  color: white;
+  border-radius: 8px;
+}
+
+.panel {
+  display: block;
+  padding: 10px;
+  background: #1e293b;
+  border-radius: 8px;
+  color: white;
+}
+
+/* =========================
+   📊 TABLEAU
+========================= */
+
+table {
+  width: 100%;
+  color: white;
+}
+
+th, td {
+  padding: 8px;
+  border-bottom: 1px solid #334155;
+  color: white;
+}
+
+th {
+  background: #1e293b;
+}
+
+/* =========================
+   💬 INPUT / TEXTAREA
+========================= */
+
+input, textarea {
+  background: #0f172a;
+  color: white;
+  border: 1px solid #334155;
+  outline: none;
+}
+
+textarea {
+  width: 100%;
+  height: 100px;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 10px;
+  box-sizing: border-box;
+  resize: none;
+}
+
+/* =========================
+   💬 COMMENTAIRES
+========================= */
+
+#commentList li {
+  background: #334155;
+  color: white;
+  margin-top: 5px;
+  padding: 5px;
+  border-radius: 6px;
+}
+
+/* =========================
+   📦 CARD
+========================= */
+
+.card {
+  background: #1e293b;
+  color: white;
+  padding: 15px;
+  margin: 15px auto;
+  width: 300px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  box-sizing: border-box;
+}
+
+.card textarea {
+  width: 100%;
+  max-width: 100%;
+  height: 80px;
+  border-radius: 8px;
+  border: none;
+  padding: 10px;
+  margin-top: 10px;
+  resize: none;
+}
+
+/* =========================
+   📌 FOOTER
+========================= */
+
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #f1f5f9;
+  padding: 10px;
+  font-size: 12px;
+  color: #555;
+  border-top: 1px solid #ddd;
+}
