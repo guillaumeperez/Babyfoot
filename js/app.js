@@ -1,9 +1,24 @@
-// Pour Firebase JS SDK v7.20.0 and later, measurementId is optional
+// =========================
+// Firebase INIT
+// =========================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore,  collection,  addDoc,  getDocs} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  doc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+console.log("🔥 APP JS CHARGÉ");
+window.test = "OK";
+
+// =========================
+// CONFIG FIREBASE
+// =========================
 
 const firebaseConfig = {
   apiKey: "AIzaSyA-B2_flq7AmCCr3I6iigHRbKLuS3gMSrY",
@@ -17,39 +32,40 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-console.log("FIREBASE OK");
+console.log("🔥 FIREBASE OK");
 
 // =========================
-// 👥 LOAD PLAYERS
+// 👥 PLAYERS
 // =========================
+
 window.loadPlayers = async function () {
   const list = document.getElementById("playerList");
+  if (!list) return;
+
   list.innerHTML = "";
 
   const snapshot = await getDocs(collection(db, "players"));
 
-  snapshot.forEach(doc => {
-    const p = doc.data();
-
+  snapshot.forEach((d) => {
+    const p = d.data();
     const li = document.createElement("li");
     li.textContent = `${p.name} - ${p.points || 0} pts`;
-
     list.appendChild(li);
   });
 };
 
 window.loadPlayersBottom = async function () {
   const list = document.getElementById("playersBottomList");
+  if (!list) return;
+
   list.innerHTML = "";
 
   const snapshot = await getDocs(collection(db, "players"));
 
-  snapshot.forEach(doc => {
-    const p = doc.data();
-
+  snapshot.forEach((d) => {
+    const p = d.data();
     const li = document.createElement("li");
     li.textContent = `${p.name} - ${p.points || 0} pts`;
-
     list.appendChild(li);
   });
 };
@@ -57,6 +73,7 @@ window.loadPlayersBottom = async function () {
 // =========================
 // ➕ ADD PLAYER
 // =========================
+
 window.addPlayer = async function () {
   const input = document.getElementById("playerInput");
   const name = input.value.trim();
@@ -73,18 +90,16 @@ window.addPlayer = async function () {
   input.value = "";
 
   await loadPlayers();
-  await loadPlayersBottom(); // 👈 IMPORTANT
+  await loadPlayersBottom();
 };
 
 // =========================
-// Ajout score
+// 💾 SAVE MATCH
 // =========================
-import { serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 window.saveMatch = async function () {
-
-  let sb = parseInt(document.getElementById("sb").value);
-  let sr = parseInt(document.getElementById("sr").value);
+  const sb = parseInt(document.getElementById("sb").value);
+  const sr = parseInt(document.getElementById("sr").value);
 
   if (isNaN(sb) || isNaN(sr)) return;
 
@@ -100,84 +115,84 @@ window.saveMatch = async function () {
 
   await addDoc(collection(db, "matches"), match);
 
-  console.log("MATCH ENREGISTRÉ");
+  console.log("✅ MATCH ENREGISTRÉ");
 
-  updatePlayerStats(match);
+  await updatePlayerStats(match);
 };
 
 // =========================
-// Mise à jour des joueurs pour le score
+// 📊 UPDATE STATS
 // =========================
+
 async function updatePlayerStats(match) {
+  const blueWin = match.sb > match.sr;
 
-  let blueWin = match.sb > match.sr;
+  const snapshot = await getDocs(collection(db, "players"));
 
-  const allPlayersSnap = await getDocs(collection(db, "players"));
+  snapshot.forEach(async (d) => {
+    const player = d.data();
+    const id = d.id;
 
-  allPlayersSnap.forEach(async (docSnap) => {
-    const player = docSnap.data();
-    const id = docSnap.id;
+    let update = {
+      wins: player.wins || 0,
+      losses: player.losses || 0
+    };
 
-    let update = {};
-
-    let isBlue = [match.b1, match.b2].includes(player.name);
-    let isRed = [match.r1, match.r2].includes(player.name);
+    const isBlue = [match.b1, match.b2].includes(player.name);
+    const isRed = [match.r1, match.r2].includes(player.name);
 
     if (!isBlue && !isRed) return;
 
     if (isBlue) {
-      update.wins = player.wins || 0;
-      update.losses = player.losses || 0;
-
       if (blueWin) update.wins++;
       else update.losses++;
     }
 
     if (isRed) {
-      update.wins = player.wins || 0;
-      update.losses = player.losses || 0;
-
       if (!blueWin) update.wins++;
       else update.losses++;
     }
 
-    update.points = (update.wins || 0) - (update.losses || 0);
+    update.points = update.wins - update.losses;
 
     await updateDoc(doc(db, "players", id), update);
   });
 
   loadPlayers();
   loadPlayersBottom();
-};
+}
 
 // =========================
-// HISTORIQUE MATCHS
+// 📜 MATCHES
 // =========================
 
 window.loadMatches = async function () {
   const list = document.getElementById("matchHistory");
+  if (!list) return;
+
   list.innerHTML = "";
 
   const snapshot = await getDocs(collection(db, "matches"));
 
-  snapshot.forEach(doc => {
-    const m = doc.data();
+  snapshot.forEach((d) => {
+    const m = d.data();
 
     const li = document.createElement("li");
-    li.textContent =
-      `${m.b1} ${m.b2} (${m.sb}) vs ${m.r1} ${m.r2} (${m.sr})`;
+    li.textContent = `${m.b1} ${m.b2} (${m.sb}) vs ${m.r1} ${m.r2} (${m.sr})`;
 
     list.appendChild(li);
   });
 };
 
 // =========================
-// Classement MAJ
+// 🏆 RANKING
 // =========================
-window.loadRanking = async function () {
 
+window.loadRanking = async function () {
   const tbody = document.getElementById("rankingList");
   const podium = document.getElementById("podium");
+
+  if (!tbody || !podium) return;
 
   tbody.innerHTML = "";
   podium.innerHTML = "";
@@ -186,48 +201,36 @@ window.loadRanking = async function () {
 
   let players = [];
 
-  snapshot.forEach(doc => {
-    players.push(doc.data());
-  });
+  snapshot.forEach((d) => players.push(d.data()));
 
-  // 🧠 TRI
-  players.sort((a, b) => {
-    const pa = (a.wins || 0) - (a.losses || 0);
-    const pb = (b.wins || 0) - (b.losses || 0);
-    return pb - pa;
-  });
+  players.sort((a, b) => (b.wins - b.losses) - (a.wins - a.losses));
 
-  // 🏆 PODIUM (TOP 3)
   const medals = ["🥇", "🥈", "🥉"];
 
   players.slice(0, 3).forEach((p, i) => {
     const div = document.createElement("div");
-    div.className = "podium";
     div.textContent = `${medals[i]} ${p.name}`;
     podium.appendChild(div);
   });
 
-  // 📊 TABLEAU
-  players.forEach((p, index) => {
+  players.forEach((p, i) => {
+    const tr = document.createElement("tr");
 
-    let wins = p.wins || 0;
-    let losses = p.losses || 0;
-    let points = wins - losses;
+    const wins = p.wins || 0;
+    const losses = p.losses || 0;
+    const points = wins - losses;
 
-    let tr = document.createElement("tr");
-
-    let progress = wins + losses === 0
-      ? 0
-      : Math.round((wins / (wins + losses)) * 100);
+    const progress =
+      wins + losses === 0 ? 0 : Math.round((wins / (wins + losses)) * 100);
 
     tr.innerHTML = `
-      <td>${index + 1}</td>
+      <td>${i + 1}</td>
       <td>${p.name}</td>
       <td>${wins}</td>
       <td>${losses}</td>
       <td><b>${points}</b></td>
       <td>
-        <div style="background:#ddd;height:8px;border-radius:5px;overflow:hidden;">
+        <div style="background:#ddd;height:8px;border-radius:5px;">
           <div style="width:${progress}%;height:100%;background:#4f46e5;"></div>
         </div>
       </td>
@@ -238,8 +241,9 @@ window.loadRanking = async function () {
 };
 
 // =========================
-// Commentaire
+// 💬 COMMENTS
 // =========================
+
 window.addComment = async function () {
   const input = document.getElementById("commentInput");
   const text = input.value.trim();
@@ -255,27 +259,27 @@ window.addComment = async function () {
 
   loadComments();
 };
-// =========================
-// Charcher le commentaire
-// =========================
+
 window.loadComments = async function () {
   const list = document.getElementById("commentList");
+  if (!list) return;
+
   list.innerHTML = "";
 
   const snapshot = await getDocs(collection(db, "comments"));
 
-  snapshot.forEach(doc => {
-    const c = doc.data();
-
+  snapshot.forEach((d) => {
+    const c = d.data();
     const li = document.createElement("li");
     li.textContent = c.text;
-
     list.appendChild(li);
   });
 };
 
+// =========================
+// INIT
+// =========================
 
-// initialisation
 document.addEventListener("DOMContentLoaded", () => {
   loadPlayers();
   loadPlayersBottom();
