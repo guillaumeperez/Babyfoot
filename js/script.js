@@ -4,6 +4,10 @@
 
 function openModal(id){
   document.getElementById(id).style.display="block";
+
+  if(id === "score"){
+    window.loadPlayersSelect();
+  }
 }
 
 function closeModal(id){
@@ -31,6 +35,11 @@ function validatePlayer(){
     return;
   }
 }
+
+/* =========================
+   👥 Confirmation et Suppression JOUEUR
+========================= */
+
 
 /* =========================
    ⚽ SCORE MESSAGE
@@ -61,37 +70,12 @@ function limitScore(input){
 }
 
 /* =========================
-   📜 COMMENTAIRES (LOCAL UI POUR L’INSTANT)
-========================= */
-
-function addComment(){
-  let input = document.getElementById("commentInput");
-  let text = input.value.trim();
-
-  if(text === "") return;
-
-  let list = document.getElementById("commentList");
-
-  let li = document.createElement("li");
-  li.textContent = text;
-
-  list.appendChild(li);
-
-  input.value = "";
-}
-
-/* =========================
    📜 MATCH HISTORY (TEMPORAIRE UI)
 ========================= */
 
 function openHistory(){
-
-  let list = document.getElementById("matchHistory");
-  list.innerHTML = "";
-
-  list.innerHTML = "<li>⚠️ Historique sera connecté à Firebase étape suivante</li>";
-
   openModal("history");
+  window.loadMatches(); // 🔥 appelle Firebase
 }
 
 /* =========================

@@ -18,11 +18,12 @@
 <button class="carte" onclick="openModal('rules')">📜 Règles</button>
 <button class="carte" onclick="openHistory()">📜 Historique</button>
 <button class="carte" onclick="openModal('comment')">💬 Commentaire</button>
+<button onclick="loginAdmin()">🔐 Connexion admin</button>
 
 <!-- JOUEURS -->
 <div id="players" class="modal">
   <div class="box">
-
+    <div id="playerMessage"></div>
     <h3>👥 Joueurs</h3>
 
     <!-- INPUT AJOUT JOUEUR -->
@@ -70,6 +71,13 @@
 
   </div>
 </div>
+<div id="playerMessage" style="
+  margin-top:10px;
+  padding:8px;
+  border-radius:8px;
+  display:none;
+  text-align:center;
+"></div>
 
 <!-- Score -->
 <div id="score" class="modal">
@@ -81,20 +89,40 @@
     <div class="blue">
       <h4>🔵 Équipe Bleue</h4>
 
-      <input id="b1" placeholder="Joueur 1">
-      <input id="b2" placeholder="Joueur 2"><br>
+      <div class="players-row">
+        <select id="b1"></select>
+        <select id="b2"></select>
+      </div>
 
-      <input id="sb" type="number" min="-1" max="10" step="1" oninput="limitScore(this)">
+      <input 
+        id="sb" 
+        type="number" 
+        min="-1" 
+        max="10" 
+        step="1" 
+        oninput="limitScore(this)"
+        class="score-input"
+      >
     </div>
 
     <!-- ÉQUIPE ROUGE -->
     <div class="red">
       <h4>🔴 Équipe Rouge</h4>
 
-      <input id="r1" placeholder="Joueur 1">
-      <input id="r2" placeholder="Joueur 2"><br>
+      <div class="players-row">
+        <select id="r1"></select>
+        <select id="r2"></select>
+      </div>
 
-      <input id="sr" type="number" min="-1" max="10" step="1" oninput="limitScore(this)">
+      <input 
+        id="sr" 
+        type="number" 
+        min="-1" 
+        max="10" 
+        step="1" 
+        oninput="limitScore(this)"
+        class="score-input"
+      >
     </div>
 
     <!-- BOUTONS -->
@@ -257,8 +285,7 @@
     <button onclick="addComment()">Ajouter</button>
     <button onclick="closeModal('comment')">Fermer</button>
 
-    <h4>📜 Commentaires</h4>
-    <ul id="commentList"></ul>
+        <ul id="commentList"></ul>
 
   </div>
 </div>

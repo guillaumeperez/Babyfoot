@@ -78,6 +78,11 @@ button:hover {
   border-radius: 12px;
 }
 
+#playerMessage {
+  position: relative;
+  z-index: 9999;
+}
+
 /* =========================
    👥 JOUEURS
 ========================= */
@@ -103,6 +108,15 @@ button:hover {
   color: white;
   padding: 3px;
   text-align: left;
+}
+
+#playerMessage {
+  margin-bottom: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  display: none;
+  text-align: center;
+  font-size: 14px;
 }
 
 /* =========================
@@ -166,7 +180,27 @@ button:hover {
 /* =========================
    ⚽ SCORE
 ========================= */
+.players-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
 
+.players-row select {
+  width: 120px;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.score-input {
+  display: block;
+  margin: 0 auto;
+  width: 80px;
+  text-align: center;
+  padding: 6px;
+  border-radius: 6px;
+}
 .blue {
   background: #1e40af;
   padding: 10px;
