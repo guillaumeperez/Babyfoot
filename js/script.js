@@ -2,12 +2,20 @@
    🔧 MODALES
 ========================= */
 
+let scrollY = 0;
+
 // Ouvre une modale
 function openModal(id) {
   const modal = document.getElementById(id);
   if (!modal) return;
 
-  modal.style.display = "block";
+  modal.style.display = "flex";
+
+  // 🔥 sauvegarde position scroll
+  scrollY = window.scrollY;
+
+  document.body.classList.add("no-scroll");
+  document.body.style.top = `-${scrollY}px`;
 }
 
 // Ferme une modale
@@ -16,6 +24,12 @@ function closeModal(id) {
   if (!modal) return;
 
   modal.style.display = "none";
+
+  document.body.classList.remove("no-scroll");
+
+  // 🔥 restaure scroll
+  document.body.style.top = "";
+  window.scrollTo(0, scrollY);
 }
 
 /* =========================

@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Baby-foot AGAP</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Baby-foot AGAP</title>
 
-<link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
-<div class="header">
-  <img src="img/logo2.png" alt="Logo Babyfoot" class="logo">
- 
-</div>
+<div class="page">
 
-<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+  <div class="header">
+    <img src="img/logo2.png" alt="Logo Babyfoot" class="logo">
+  </div>
 
-<!-- Icones -->
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 
-<div class="menu">
-
+  <div class="menu">
   <!-- LIGNE 1 -->
   <button class="carte big" onclick="openModal('players')">
     <lottie-player src="lottie/players.json" loop autoplay></lottie-player>
@@ -43,8 +43,8 @@
   </button>
 
   <button class="carte big" onclick="openModal('rules')">
-     <lottie-player src="lottie/rules.json" loop autoplay></lottie-player>
-     <span>Règles</span>
+    <lottie-player src="lottie/rules.json" loop autoplay></lottie-player>
+    <span>Règles</span>
   </button>
 
   <button class="carte big" onclick="openHistory()">
@@ -52,17 +52,16 @@
     <span>Historique</span>
   </button>
 
-  <!-- LIGNE 3 (ADMIN) -->
-   
-    <button class="carte big comment" onclick="openModal('comment')">
-      <lottie-player src="lottie/comment.json" loop autoplay></lottie-player>
-      <span>Commentaire</span>
-    </button>
+  <!-- LIGNE 3 -->
+  <button class="carte big comment" onclick="openModal('comment')">
+    <lottie-player src="lottie/comment.json" loop autoplay></lottie-player>
+    <span>Commentaire</span>
+  </button>
 
-    <button class="carte big admin" onclick="loginAdmin()">
-      <lottie-player src="lottie/loginAdmin.json" loop autoplay></lottie-player>
-      <span>Admin</span>
-    </button>
+  <button class="carte big admin" onclick="loginAdmin()">
+    <lottie-player src="lottie/loginAdmin.json" loop autoplay></lottie-player>
+    <span>Admin</span>
+  </button>
 
 </div>
 
@@ -328,6 +327,8 @@
   <strong>👥 Joueurs (ELO)</strong>
   <ul id="playersBottomList"></ul>
 </div>
+
+</div> 
 
 <footer>
 © 2026 - J'peux pas j'ai baby-foot - Guillaume PEREZ

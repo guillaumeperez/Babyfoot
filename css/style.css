@@ -5,10 +5,22 @@
 body {
   font-family: Arial;
   text-align: center;
+
   background: url("../img/background.jpg") no-repeat center center fixed;
   background-size: cover;
+
   color: white;
-  padding-bottom: 10px;
+
+  padding: 5px;
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page {
+  flex: 1;
+  padding-bottom: 70px;
 }
 
 /* =========================
@@ -120,7 +132,9 @@ button img {
 
 .carte {
   width: 280px;
+  max-width: 90%;
   height: 65px;
+
   margin: 10px auto;
   font-size: 18px;
 
@@ -181,7 +195,11 @@ button img {
   left:0;
   width:100%;
   height:100%;
+
   background: rgba(0,0,0,0.2);
+
+  justify-content: center;
+  align-items: center;
 }
 
 /* =========================
@@ -215,11 +233,6 @@ button img {
   backdrop-filter: blur(8px);
 }
 
-.carte {
-  width: 280px;
-  height: 65px;
-  max-width: 90%;
-}
 /* =========================
    👥 JOUEURS
 ========================= */
@@ -346,11 +359,10 @@ button img {
    📊 TABLE
 ========================= */
 .panel {
-  display: none;              
-  margin-top: 5px;
-  margin-bottom: 10px; 
-
+  display: none;
   padding: 10px;
+  margin-bottom: 10px;
+
   border-radius: 8px;
 
   background: rgba(255,255,255,0.85);
@@ -439,11 +451,13 @@ input, textarea {
 ========================= */
 
 footer {
+  width: 100%;
+  text-align: center;
   position: fixed;
   bottom: 0;
-  width: 100%;
+  left: 0;
 
-  background: #e5e7eb; /* gris visible */
+  background: #e5e7eb;
   padding: 10px;
 
   font-size: 12px;
@@ -453,9 +467,6 @@ footer {
   text-align: center;
 }
 
-body {
-  padding-bottom: 60px;
-}
 
 /* =========================
    Accordion (régles)
@@ -494,14 +505,82 @@ body {
   background: #2563eb;
 }
 
-.panel {
-  display: none;
 
-  padding: 10px;
-  margin-bottom: 10px;
+/* =========================
+📱 MOBILE OPTIMISATION
+========================= */
+/* MOBILE */
+@media (max-width: 900px) {
 
-  border-radius: 8px;
+  .menu {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    max-width: 95%;
+    margin: 20px auto;
+  }
 
-  background: rgba(255,255,255,0.85);
-  color: #1e293b;
+  .carte.big {
+    width: 25vw;
+    height: 25vw;
+    aspect-ratio: 1 / 1;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .carte.big lottie-player {
+    width: 65%;
+    height: 65%;
+  }
+
+  .carte.big span {
+    font-size: 14px;
+    margin-top: 5px;
+  }
+
+  .logo {
+    width: 180px;
+  }
+
+  .box {
+    width: 90%;
+    max-width: 90%;
+    margin: 20px auto;
+
+    max-height: 85vh;      /* 🔥 hauteur max écran */
+    overflow-y: auto;      /* 🔥 scroll interne */
+
+    padding: 15px;
+  }
+
+  .modal.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  }
+
+ footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+}
+}
+
+body.no-scroll {
+  overflow: hidden;
+  position: fixed;   /* 🔥 bloque totalement */
+  width: 100%;
+}
+
+html, body {
+  overscroll-behavior: none; /* 🔥 stop le bounce mobile */
+}
+
+body.no-scroll {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  touch-action: none; /* 🔥 bloque swipe */
 }
