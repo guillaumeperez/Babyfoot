@@ -2,16 +2,20 @@
    🔧 MODALES
 ========================= */
 
-function openModal(id){
-  document.getElementById(id).style.display="block";
+// Ouvre une modale
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
 
-  if(id === "score"){
-    window.loadPlayersSelect();
-  }
+  modal.style.display = "block";
 }
 
-function closeModal(id){
-  document.getElementById(id).style.display="none";
+// Ferme une modale
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
+
+  modal.style.display = "none";
 }
 
 /* =========================
@@ -32,21 +36,14 @@ function validatePlayer(){
   if(!regex.test(name)){
     error.textContent = "Caractères non autorisés !";
     error.style.display = "block";
-    return;
   }
 }
 
 /* =========================
-   👥 Confirmation et Suppression JOUEUR
-========================= */
-
-
-/* =========================
-   ⚽ SCORE MESSAGE
+   ⚽ MESSAGE SCORE
 ========================= */
 
 function showScoreMessage(text, color){
-
   let box = document.getElementById("scoreMessage");
 
   box.style.display = "block";
@@ -56,11 +53,10 @@ function showScoreMessage(text, color){
 }
 
 /* =========================
-   ⚽ LIMIT SCORE
+   ⚽ LIMITER SCORE
 ========================= */
 
 function limitScore(input){
-
   let value = parseInt(input.value);
 
   if(isNaN(value)) return;
@@ -70,22 +66,58 @@ function limitScore(input){
 }
 
 /* =========================
-   📜 MATCH HISTORY (TEMPORAIRE UI)
+   📜 HISTORIQUE
 ========================= */
 
-function openHistory(){
+// Ouvre l'historique
+function openHistory() {
   openModal("history");
-  window.loadMatches(); // 🔥 appelle Firebase
+
+  // 🔥 Charger le filtre joueurs
+  loadPlayersFilter();
+
+  // 🔥 Charger les matchs
+  loadMatches();
 }
 
+
 /* =========================
-   🏆 RANKING (TEMPORAIRE)
+   👤 PROFIL JOUEUR
+========================= */
+
+window.openPlayerProfile = function(name) {
+  alert("Profil de " + name);
+};
+
+/* =========================
+   🏆 CLASSEMENT
 ========================= */
 
 function openRanking(){
-  window.loadRanking();
+  if(window.loadRanking){
+    window.loadRanking();
+  }
   openModal("ranking");
 }
+
+
+
+document.querySelectorAll(".accordion").forEach(btn => {
+  btn.addEventListener("click", function () {
+
+    this.classList.toggle("active");
+
+    const panel = this.nextElementSibling;
+
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      panel.style.display = "block";
+    }
+
+  });
+});
+
 
 /* =========================
    🚀 INIT

@@ -5,17 +5,117 @@
 body {
   font-family: Arial;
   text-align: center;
-  background: linear-gradient(135deg, #4b71ca, #4e6996);
+  background: url("../img/background.jpg") no-repeat center center fixed;
+  background-size: cover;
   color: white;
-  padding-bottom: 50px;
-}
-
-h1 {
-  margin-top: 15px;
+  padding-bottom: 10px;
 }
 
 /* =========================
-   🎛️ BOUTONS
+   🧱 LAYOUT
+========================= */
+
+.menu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  padding: 10px;
+  justify-items: center;
+  max-width: 500px;
+  margin: 30px auto;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  align-items: center; /* 🔥 important */
+}
+
+.actions button {
+  flex: 1;
+  max-width: 180px;
+  height: 50px; /* 🔥 force même hauteur */
+}
+
+/* =========================
+   🔘 BOUTONS
+========================= */
+
+button {
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+/* bouton normal */
+button:not(.carte) {
+  background: #3b82f6;
+  color: white;
+}
+
+button:not(.carte):hover {
+  background: #2563eb;
+}
+
+/* icônes */
+button img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* bouton ajouter */
+.btn-add {
+  background: transparent !important;
+  color: #16a34a;              /* ✅ vert lisible */
+  border: 2px solid #16a34a;   /* ↓ contour moins épais */
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 10px 15px;
+  height: 50px;
+  border-radius: 10px;
+}
+
+.btn-danger {
+  background: transparent !important;
+  color: #dc2626;              /* ✅ rouge lisible */
+  border: 2px solid #dc2626;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 10px 15px;
+  height: 50px;
+  border-radius: 10px;
+}
+
+.btn-add {
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.btn-danger {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.btn-add:hover {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  color: white;
+}
+
+/* =========================
+   🧩 CARTES MENU
 ========================= */
 
 .carte {
@@ -23,36 +123,55 @@ h1 {
   height: 65px;
   margin: 10px auto;
   font-size: 18px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
+
+  border-radius: 14px;
   display: block;
 
-  background: #334155;
-  color: white;
+  background: rgba(255, 255, 255, 0.7);
+  color: #1e3a5f;
+
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.1);
+
   transition: 0.2s;
 }
 
 .carte:hover {
-  background: #475569;
-  transform: scale(1.03);
+  background: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
 }
 
-button {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background: #2563eb;
-  color: white;
+.carte.big {
+  width: 140px;
+  height: 140px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: 20px;
+  background: rgba(255,255,255,0.85);
+  color: #1e293b;
 }
 
-button:hover {
-  background: #1d4ed8;
+.carte.big lottie-player {
+  width: 70px;
+  height: 70px;
+}
+
+.carte.big span {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.carte.admin {
+  grid-column: 3;
+  border: 2px solid #f59e0b;
 }
 
 /* =========================
-   🪟 MODALES
+   🪟 MODALE
 ========================= */
 
 .modal {
@@ -62,7 +181,22 @@ button:hover {
   left:0;
   width:100%;
   height:100%;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.2);
+}
+
+/* =========================
+   🧾 HEADER / LOGO
+========================= */
+
+.header {
+  margin-top: 20px;
+}
+
+.logo {
+  width: 300px;
+  max-width: 80%;
+  border-radius: 16px;
+  margin-bottom: 10px;
 }
 
 /* =========================
@@ -70,27 +204,46 @@ button:hover {
 ========================= */
 
 .box {
-  background: #1e293b;
-  color: white;
+  background: rgba(240, 240, 240, 0.459);
+  color: #1e293b;
+
   width: 450px;
   margin: 70px auto;
   padding: 20px;
   border-radius: 12px;
+
+  backdrop-filter: blur(8px);
 }
 
-#playerMessage {
-  position: relative;
-  z-index: 9999;
+.carte {
+  width: 280px;
+  height: 65px;
+  max-width: 90%;
 }
-
 /* =========================
    👥 JOUEURS
 ========================= */
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  font-size: 20px;
+  font-weight: bold;
+  font-weight: bold;
+  color: #1e293b;
+}
+
+.title img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
 
 #playerInput {
   width: 100%;
   max-width: 300px;
-  display: block;
   margin: 10px auto;
   padding: 8px;
   border-radius: 8px;
@@ -99,108 +252,166 @@ button:hover {
 }
 
 #playerInput:focus {
-  outline: none;
   border: 2px solid #2c7be5;
+  outline: none;
 }
 
 #playerList li,
 #playersBottomList li {
-  color: white;
-  padding: 3px;
-  text-align: left;
+  color: #1e3a5f;
+  padding: 4px 0;
+  font-size: 14px;
 }
 
 #playerMessage {
+  display: none;
   margin-bottom: 10px;
   padding: 8px;
   border-radius: 8px;
-  display: none;
   text-align: center;
   font-size: 14px;
 }
 
 /* =========================
-   📍 BOX JOUEURS FIXE
+   📍 JOUEURS FIXE
 ========================= */
 
 #playersBottomBox {
   position: fixed;
-  bottom: 60px;
-  right: 10px;
-  width: 220px;
+  bottom: 20px;
+  right: 20px;
+  width: 230px;
 
-  background: #1e293b;
-  color: white;
+  background: rgba(255,255,255,0.75);
+  color: #1e3a5f;
 
-  border: 1px solid #334155;
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 12px;
+  padding: 12px;
+
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 
   text-align: left;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-#playersBottomBox strong {
-  color: #facc15;
 }
 
 /* =========================
    🏆 PODIUM
 ========================= */
 
-.podium {
-  padding:10px;
-  border-radius:10px;
-  text-align:center;
-  width:100px;
-  font-weight:bold;
+#podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
-.gold { background:#ffd700; }
-.silver { background:#c0c0c0; }
-.bronze { background:#cd7f32; }
-
-/* =========================
-   📊 PROGRESS BAR
-========================= */
-
-.progress {
-  height:8px;
-  background:#000000;
-  border-radius:5px;
-  overflow:hidden;
+.podium-box {
+  width: 100px;
+  text-align: center;
+  border-radius: 10px;
+  padding: 10px;
+  font-weight: bold;
+  color: #000;
 }
 
-.progress-bar {
-  height:100%;
-  background:#4f46e5;
-}
+.podium-1 { background: gold; height: 140px; order: 2; }
+.podium-2 { background: silver; height: 110px; order: 1; }
+.podium-3 { background: #cd7f32; height: 90px; order: 3; }
 
 /* =========================
    ⚽ SCORE
 ========================= */
+
 .players-row {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 10px;
-}
-
-.players-row select {
-  width: 120px;
-  padding: 6px;
-  border-radius: 6px;
 }
 
 .score-input {
-  display: block;
-  margin: 0 auto;
   width: 80px;
   text-align: center;
   padding: 6px;
   border-radius: 6px;
 }
+
+.score {
+  width: 40px;
+  text-align: right;
+  font-weight: bold;
+}
+
+/* =========================
+   📊 TABLE
+========================= */
+.panel {
+  display: none;              
+  margin-top: 5px;
+  margin-bottom: 10px; 
+
+  padding: 10px;
+  border-radius: 8px;
+
+  background: rgba(255,255,255,0.85);
+  color: #1e293b;
+}
+
+table {
+  width: 100%;
+  color: #1e293b;
+}
+
+th, td {
+  padding: 8px;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+/* =========================
+   💬 INPUT
+========================= */
+
+input, textarea {
+  background: rgba(255,255,255,0.9);
+  color: #1e293b;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+}
+
+/* =========================
+   📜 MATCHS
+========================= */
+.match-card {
+  max-width: 200px;   
+  margin: 8px auto;
+  padding: 12px;
+
+  background: rgba(255,255,255,0.9);
+  color: #1e293b;
+
+  border-radius: 12px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+.match-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  font-size: 14px;
+}
+
+.match-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  font-size: 14px;
+}
+
+.score {
+  width: 40px;
+  text-align: right;
+  font-weight: bold;
+}
+
 .blue {
   background: #1e40af;
   padding: 10px;
@@ -217,121 +428,80 @@ button:hover {
   color: white;
 }
 
-/* =========================
-   📌 ACCORDION
-========================= */
-
-.accordion {
-  width: 100%;
-  padding: 12px;
-  margin-top: 5px;
-  font-size: 16px;
-  text-align: left;
-  border: none;
-  cursor: pointer;
-
-  background: #334155;
-  color: white;
-  border-radius: 8px;
-}
-
-.panel {
-  display: block;
-  padding: 10px;
-  background: #1e293b;
-  border-radius: 8px;
-  color: white;
+#matchHistory {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 /* =========================
-   📊 TABLEAU
-========================= */
-
-table {
-  width: 100%;
-  color: white;
-}
-
-th, td {
-  padding: 8px;
-  border-bottom: 1px solid #334155;
-  color: white;
-}
-
-th {
-  background: #1e293b;
-}
-
-/* =========================
-   💬 INPUT / TEXTAREA
-========================= */
-
-input, textarea {
-  background: #0f172a;
-  color: white;
-  border: 1px solid #334155;
-  outline: none;
-}
-
-textarea {
-  width: 100%;
-  height: 100px;
-  border-radius: 8px;
-  padding: 10px;
-  margin-top: 10px;
-  box-sizing: border-box;
-  resize: none;
-}
-
-/* =========================
-   💬 COMMENTAIRES
-========================= */
-
-#commentList li {
-  background: #334155;
-  color: white;
-  margin-top: 5px;
-  padding: 5px;
-  border-radius: 6px;
-}
-
-/* =========================
-   📦 CARD
-========================= */
-
-.card {
-  background: #1e293b;
-  color: white;
-  padding: 15px;
-  margin: 15px auto;
-  width: 300px;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  box-sizing: border-box;
-}
-
-.card textarea {
-  width: 100%;
-  max-width: 100%;
-  height: 80px;
-  border-radius: 8px;
-  border: none;
-  padding: 10px;
-  margin-top: 10px;
-  resize: none;
-}
-
-/* =========================
-   📌 FOOTER
+   Footer
 ========================= */
 
 footer {
   position: fixed;
   bottom: 0;
   width: 100%;
-  background: #f1f5f9;
+
+  background: #e5e7eb; /* gris visible */
   padding: 10px;
+
   font-size: 12px;
-  color: #555;
-  border-top: 1px solid #ddd;
+  color: #1e293b;
+
+  border-top: 1px solid #cbd5e1;
+  text-align: center;
+}
+
+body {
+  padding-bottom: 60px;
+}
+
+/* =========================
+   Accordion (régles)
+========================= */
+
+.accordion {
+  display: flex;              /* force en colonne */
+  width: 100%;
+
+  padding: 12px;
+  margin-top: 10px;
+
+  font-size: 16px;
+  font-weight: bold;
+  text-align: left;
+
+  border: none;
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+
+  transition: 0.2s;
+}
+
+.accordion img,
+.title img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.accordion:hover {
+  background: #2563eb;
+}
+
+.panel {
+  display: none;
+
+  padding: 10px;
+  margin-bottom: 10px;
+
+  border-radius: 8px;
+
+  background: rgba(255,255,255,0.85);
+  color: #1e293b;
 }

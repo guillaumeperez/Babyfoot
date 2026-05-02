@@ -1,39 +1,34 @@
 // =========================
 // 🔥 IMPORTS FIREBASE
 // =========================
-
-// Initialise Firebase (obligatoire)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
-// 📦 Base de données (Firestore)
 import {
-  getFirestore,      // connexion à la base
-  collection,        // accès à une collection
-  addDoc,            // ajouter document
-  getDocs,           // lire documents
-  updateDoc,         // modifier
-  doc,               // cibler un document
-  serverTimestamp,   // date automatique
-  deleteDoc,         // supprimer
-  query, 
-  orderBy            // trier
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  doc,
+  serverTimestamp,
+  deleteDoc,
+  query,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// 🔐 Authentification (login admin)
 import {
-  getAuth,                       // initialise auth
-  signInWithEmailAndPassword,   // login
-  onAuthStateChanged            // détecte si connecté ou non
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+import { updateElo2v2 } from "./elo.js";
 
 // =========================
 // ⚙️ CONFIG FIREBASE
 // =========================
-
-// 🔑 Clés de ton projet Firebase (normal qu'elles soient visibles)
 const firebaseConfig = {
-  apiKey: "AIzaSyA-...",
+  apiKey: "AIzaSy...",
   authDomain: "babyfoot-a78f5.firebaseapp.com",
   projectId: "babyfoot-a78f5",
   storageBucket: "babyfoot-a78f5.firebasestorage.app",
@@ -41,22 +36,16 @@ const firebaseConfig = {
   appId: "1:579925171552:web:b6faf8313581b7b8dd5205"
 };
 
-
 // =========================
-// 🚀 INITIALISATION
+// 🚀 INIT
 // =========================
-
-// Lance Firebase
 const app = initializeApp(firebaseConfig);
-
-// Connexion à la base de données
 const db = getFirestore(app);
-
-// Connexion au système d'authentification
 const auth = getAuth(app);
 
-
+// =========================
 // 🔐 LOGIN ADMIN
+// =========================
 window.loginAdmin = async function () {
   const email = prompt("Email admin");
   const password = prompt("Mot de passe");
@@ -73,63 +62,17 @@ window.loginAdmin = async function () {
 };
 
 // =========================
-// 👤 GESTION ADMIN
+// 👤 ADMIN STATE
 // =========================
-
-// Variable globale : est-ce que l'utilisateur est admin ?
 let isAdmin = false;
 
-// 🔍 Firebase écoute si quelqu'un est connecté
 onAuthStateChanged(auth, (user) => {
-
-  if (user) {
-    // ✅ Quelqu'un est connecté
-    console.log("✅ Admin connecté :", user.email);
-
-    isAdmin = true;
-
-  } else {
-    // ❌ Personne connecté
-    console.log("❌ Pas connecté");
-
-    isAdmin = false;
-  }
+  isAdmin = !!user;
 });
 
 // =========================
-// 👥 PLAYERS
+// 👥 LISTE BAS (ELO)
 // =========================
-
-window.loadPlayers = async function () {
-  const list = document.getElementById("playerList");
-  list.innerHTML = "";
-
-  const snapshot = await getDocs(collection(db, "players"));
-
-  snapshot.forEach((d) => {
-    const p = d.data();
-
-    const li = document.createElement("li");
-    li.style.display = "flex";
-    li.style.justifyContent = "space-between";
-    li.style.alignItems = "center";
-
-    const span = document.createElement("span");
-    span.textContent = `${p.name} - ${p.points || 0} pts`;
-
-    li.appendChild(span); // 🔥 IMPORTANT
-
-    if (isAdmin) {
-      const btn = document.createElement("button");
-      btn.textContent = "🗑";
-      btn.onclick = () => deletePlayer(d.id);
-      li.appendChild(btn);
-    }
-
-    list.appendChild(li); // 🔥 IMPORTANT
-  });
-};
-
 window.loadPlayersBottom = async function () {
   const list = document.getElementById("playersBottomList");
   if (!list) return;
@@ -138,140 +81,106 @@ window.loadPlayersBottom = async function () {
 
   const snapshot = await getDocs(collection(db, "players"));
 
-  snapshot.forEach((d) => {
-    const p = d.data();
+  let players = [];
+  snapshot.forEach(d => players.push(d.data()));
+
+  players.sort((a, b) => (b.elo || 0) - (a.elo || 0));
+
+  players.forEach(p => {
     const li = document.createElement("li");
-    li.textContent = `${p.name} - ${p.points || 0} pts`;
+    li.textContent = `${p.name} : ${p.elo || 2000}`;
     list.appendChild(li);
   });
 };
 
 // =========================
-// Joeur dans le menue
+// 🎯 SELECT JOUEURS
 // =========================
 window.loadPlayersSelect = async function () {
   const snapshot = await getDocs(collection(db, "players"));
-
   const selects = ["b1", "b2", "r1", "r2"];
 
   selects.forEach(id => {
     const select = document.getElementById(id);
-    if (!select) return;
-
-    select.innerHTML = "<option value=''>-- choisir --</option>";
+    if (select) select.innerHTML = "<option value=''>-- choisir --</option>";
   });
 
   snapshot.forEach(doc => {
-    const player = doc.data();
+    const p = doc.data();
 
     selects.forEach(id => {
       const select = document.getElementById(id);
       if (!select) return;
 
       const option = document.createElement("option");
-      option.value = player.name;
-      option.textContent = player.name;
-
+      option.value = p.name;
+      option.textContent = p.name;
       select.appendChild(option);
     });
   });
 };
 
-
 // =========================
 // ➕ ADD PLAYER
 // =========================
-
 window.addPlayer = async function () {
   const input = document.getElementById("playerInput");
-  let name = input.value.trim().toLowerCase(); //première lettre en majuscule
-  name = name.charAt(0).toUpperCase() + name.slice(1);
+  let name = input.value.trim();
 
-  if (!name) {
-    showPlayerMessage("❌ Nom vide", "red");
-    return;
-  }
+  if (!name) return showPlayerMessage("❌ Nom vide", "red");
 
-  // 🔍 récupérer les joueurs
+  name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+
   const snapshot = await getDocs(collection(db, "players"));
 
-  // 🔍 vérifier doublon (insensible à la casse)
   const exists = snapshot.docs.some(
     d => d.data().name.toLowerCase() === name.toLowerCase()
   );
 
-  if (exists) {
-    showPlayerMessage("❌ Joueur déjà existant", "red");
-    return;
-  }
+  if (exists) return showPlayerMessage("❌ Joueur déjà existant", "red");
 
-  try {
-    await addDoc(collection(db, "players"), {
-      name,
-      points: 0,
-      wins: 0,
-      losses: 0
-    });
+  await addDoc(collection(db, "players"), {
+    name,
+    wins: 0,
+    losses: 0,
+    elo: 2000
+  });
 
-    input.value = "";
+  input.value = "";
 
-    await loadPlayers();
-    await loadPlayersBottom();
-    await loadPlayersSelect();
+  await loadPlayersBottom();
+  await loadPlayersSelect();
 
-    showPlayerMessage(`✅ Joueur ajouté : ${name}`, "green");
-
-  } catch (error) {
-    console.error(error);
-    showPlayerMessage("❌ Erreur Firebase", "red");
-  }
+  showPlayerMessage(`✅ ${name} ajouté`, "green");
 };
 
 function showPlayerMessage(text, color) {
   const box = document.getElementById("playerMessage");
+  if (!box) return;
 
   box.style.display = "block";
   box.style.background = color === "green" ? "#16a34a" : "#dc2626";
-  box.style.color = "white";
   box.textContent = text;
 
-  // disparaît après 2 secondes
-  setTimeout(() => {
-    box.style.display = "none";
-  }, 2000);
+  setTimeout(() => box.style.display = "none", 2000);
 }
 
 // =========================
-// - Delete PLAYER
+// 🗑 DELETE PLAYER
 // =========================
 window.deletePlayer = async function (id) {
+  if (!confirm("Supprimer ?")) return;
 
-  const confirmDelete = confirm("⚠️ Supprimer ce joueur ?");
+  await deleteDoc(doc(db, "players", id));
 
-  if (!confirmDelete) return;
-
-  try {
-    await deleteDoc(doc(db, "players", id));
-
-    await loadPlayers();
-    await loadPlayersBottom();
-    await loadPlayersSelect();
-
-    alert("✅ Joueur supprimé");
-
-  } catch (e) {
-    console.error(e);
-    alert("❌ Erreur suppression");
-  }
+  loadPlayersBottom();
+  loadPlayersSelect();
 };
-
 
 // =========================
 // 💾 SAVE MATCH
 // =========================
-
 window.saveMatch = async function () {
-
   const sb = parseInt(document.getElementById("sb").value);
   const sr = parseInt(document.getElementById("sr").value);
 
@@ -280,26 +189,13 @@ window.saveMatch = async function () {
   const r1 = document.getElementById("r1").value;
   const r2 = document.getElementById("r2").value;
 
-  // ❌ score invalide
-  if (isNaN(sb) || isNaN(sr)) {
-    showScoreMessage("❌ Score invalide", "red");
-    return;
-  }
+  if (isNaN(sb) || isNaN(sr)) return showScoreMessage("❌ Score invalide", "red");
 
-  // ❌ champs vides
-  if (!b1 || !b2 || !r1 || !r2) {
-    showScoreMessage("❌ Choisis tous les joueurs", "red");
-    return;
-  }
-
-  // ❌ doublons
   const players = [b1, b2, r1, r2];
-  const uniquePlayers = new Set(players);
+  if (players.includes("")) return showScoreMessage("❌ Choisis tous les joueurs", "red");
 
-  if (uniquePlayers.size !== players.length) {
-    showScoreMessage("❌ Joueur en double interdit", "red");
-    return;
-  }
+  if (new Set(players).size !== 4)
+    return showScoreMessage("❌ Joueur en double", "red");
 
   const match = {
     b1,
@@ -308,91 +204,17 @@ window.saveMatch = async function () {
     r2,
     sb,
     sr,
-    createdAt: serverTimestamp()
+    createdAt: serverTimestamp(),
+    createdAtLocal: Date.now() // 🔥 IMPORTANT
   };
 
-  try {
-    await addDoc(collection(db, "matches"), match);
+  await addDoc(collection(db, "matches"), match);
+  await updatePlayerStats(match);
 
-    await updatePlayerStats(match);
+  // 🔥 recharge direct l'historique
+  await loadMatches();
 
-    showScoreMessage("✅ Match enregistré !", "green");
-
-  } catch (e) {
-    console.error(e);
-    showScoreMessage("❌ Erreur Firebase", "red");
-  }
-};
-
-// =========================
-// 📊 UPDATE STATS
-// =========================
-
-async function updatePlayerStats(match) {
-  const blueWin = match.sb > match.sr;
-
-  const snapshot = await getDocs(collection(db, "players"));
-
-  snapshot.forEach(async (d) => {
-    const player = d.data();
-    const id = d.id;
-
-    let update = {
-      wins: player.wins || 0,
-      losses: player.losses || 0
-    };
-
-    const isBlue = [match.b1, match.b2].includes(player.name);
-    const isRed = [match.r1, match.r2].includes(player.name);
-
-    if (!isBlue && !isRed) return;
-
-    if (isBlue) {
-      if (blueWin) update.wins++;
-      else update.losses++;
-    }
-
-    if (isRed) {
-      if (!blueWin) update.wins++;
-      else update.losses++;
-    }
-
-    update.points = update.wins - update.losses;
-
-    await updateDoc(doc(db, "players", id), update);
-  });
-
-  loadPlayers();
-  loadPlayersBottom();
-}
-
-// =========================
-// 📜 MATCHES
-// =========================
-
-window.loadMatches = async function () {
-  const list = document.getElementById("matchHistory");
-  if (!list) return;
-
-  list.innerHTML = "";
-
-  // 🔥 importer query + orderBy en haut de ton fichier !
-  const q = query(collection(db, "matches"), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
-
-  snapshot.forEach((d) => {
-    const m = d.data();
-
-    const li = document.createElement("li");
-
-    li.innerHTML = `
-      <b>${m.b1} ${m.b2}</b> (${m.sb}) 
-      vs 
-      <b>${m.r1} ${m.r2}</b> (${m.sr})
-    `;
-
-    list.appendChild(li);
-  });
+  showScoreMessage("✅ Match enregistré", "green");
 };
 
 // =========================
@@ -400,6 +222,7 @@ window.loadMatches = async function () {
 // =========================
 
 window.loadRanking = async function () {
+
   const tbody = document.getElementById("rankingList");
   const podium = document.getElementById("podium");
 
@@ -412,39 +235,76 @@ window.loadRanking = async function () {
 
   let players = [];
 
-  snapshot.forEach((d) => players.push(d.data()));
+  snapshot.forEach((d) => {
+    const data = d.data();
 
-  players.sort((a, b) => (b.wins - b.losses) - (a.wins - a.losses));
-
-  const medals = ["🥇", "🥈", "🥉"];
-
-  players.slice(0, 3).forEach((p, i) => {
-    const div = document.createElement("div");
-    div.textContent = `${medals[i]} ${p.name}`;
-    podium.appendChild(div);
+    players.push({
+      name: data.name || "Inconnu",
+      wins: data.wins || 0,
+      losses: data.losses || 0,
+      elo: data.elo || 2000,
+      lastDiff: data.lastDiff || 0,
+      history: data.history || []
+    });
   });
 
+  // 🔥 DEBUG
+  console.log("JOUEURS :", players);
+
+  if (players.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='7'>Aucun joueur</td></tr>";
+    return;
+  }
+
+  // 🔥 TRI PAR ELO
+  players.sort((a, b) => b.elo - a.elo);
+
+  
+  // 🏆 PODIUM MODERNE
+const top3 = players.slice(0, 3);
+
+top3.forEach((p, i) => {
+  const div = document.createElement("div");
+
+  div.classList.add("podium-box");
+
+  if (i === 0) div.classList.add("podium-1");
+  if (i === 1) div.classList.add("podium-2");
+  if (i === 2) div.classList.add("podium-3");
+
+  const medal = ["🥇", "🥈", "🥉"][i];
+
+  div.innerHTML = `
+    <div style="font-size:24px">${medal}</div>
+    <span>${p.name}</span>
+    <span>${p.elo || 2000}</span>
+  `;
+
+  podium.appendChild(div);
+});
+
+  // 📊 TABLEAU
   players.forEach((p, i) => {
+
+    const diff = p.lastDiff || 0;
+    const diffText = diff > 0 ? "+" + diff : diff;
+
+    let color = "white";
+    if (diff > 0) color = "#22c55e";
+    if (diff < 0) color = "#ef4444";
+
+    const form = p.history.map(r => r === "W" ? "🟢" : "🔴").join("");
+
     const tr = document.createElement("tr");
-
-    const wins = p.wins || 0;
-    const losses = p.losses || 0;
-    const points = wins - losses;
-
-    const progress =
-      wins + losses === 0 ? 0 : Math.round((wins / (wins + losses)) * 100);
 
     tr.innerHTML = `
       <td>${i + 1}</td>
       <td>${p.name}</td>
-      <td>${wins}</td>
-      <td>${losses}</td>
-      <td><b>${points}</b></td>
-      <td>
-        <div style="background:#ddd;height:8px;border-radius:5px;">
-          <div style="width:${progress}%;height:100%;background:#4f46e5;"></div>
-        </div>
-      </td>
+      <td>${p.wins}</td>
+      <td>${p.losses}</td>
+      <td><b>${p.elo}</b></td>
+      <td style="color:${color}; font-weight:bold;">${diffText}</td>
+      <td>${form}</td>
     `;
 
     tbody.appendChild(tr);
@@ -452,25 +312,169 @@ window.loadRanking = async function () {
 };
 
 // =========================
-// 💬 COMMENTS
+// 📊 UPDATE ELO
 // =========================
+async function updatePlayerStats(match) {
 
-window.addComment = async function () {
-  const input = document.getElementById("commentInput");
-  const text = input.value.trim();
+  const snapshot = await getDocs(collection(db, "players"));
+  let joueurs = [];
 
-  if (!text) return;
-
-  await addDoc(collection(db, "comments"), {
-    text,
-    createdAt: serverTimestamp()
+  snapshot.forEach(d => {
+    const p = d.data();
+    if ([match.b1, match.b2, match.r1, match.r2].includes(p.name)) {
+      joueurs.push({ ...p, id: d.id, oldElo: p.elo || 2000, history: p.history || [] });
+    }
   });
 
-  input.value = "";
+  const teamBleu = joueurs.filter(j => [match.b1, match.b2].includes(j.name));
+  const teamRouge = joueurs.filter(j => [match.r1, match.r2].includes(j.name));
 
-  loadComments();
+  const blueWin = match.sb > match.sr ? 1 : 0;
+
+  updateElo2v2(teamBleu, teamRouge, blueWin);
+
+  for (const j of joueurs) {
+
+    let wins = j.wins || 0;
+    let losses = j.losses || 0;
+
+    const isBlue = [match.b1, match.b2].includes(j.name);
+
+    if ((isBlue && blueWin) || (!isBlue && !blueWin)) {
+      wins++;
+      j.history.push("W");
+    } else {
+      losses++;
+      j.history.push("L");
+    }
+
+    if (j.history.length > 5) j.history.shift();
+
+    await updateDoc(doc(db, "players", j.id), {
+      wins,
+      losses,
+      elo: j.elo,
+      lastDiff: Math.round(j.elo - j.oldElo),
+      history: j.history
+    });
+  }
+
+  loadPlayersBottom();
+}
+
+// =========================
+// 📜 MATCHES
+// =========================
+window.loadMatches = async function () {
+  const list = document.getElementById("matchHistory");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  const selectedPlayer = document.getElementById("historyPlayerFilter")?.value?.toLowerCase() || "";
+  const resultFilter = document.getElementById("historyResultFilter")?.value || "";
+
+  const q = query(collection(db, "matches"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  console.log("NB MATCHS:", snapshot.size);
+
+  snapshot.forEach(d => {
+    const m = d.data();
+
+    const players = [m.b1, m.b2, m.r1, m.r2]
+      .filter(p => p)
+      .map(p => p.toLowerCase());
+
+    // 🔥 filtre joueur
+    if (selectedPlayer && !players.includes(selectedPlayer)) return;
+
+    // 🔥 déterminer victoire / défaite
+    let isWin = false;
+
+    if (selectedPlayer) {
+      const inBlue = m.b1?.toLowerCase() === selectedPlayer || m.b2?.toLowerCase() === selectedPlayer;
+      const inRed = m.r1?.toLowerCase() === selectedPlayer || m.r2?.toLowerCase() === selectedPlayer;
+
+      if (inBlue) {
+        isWin = m.sb > m.sr;
+      } else if (inRed) {
+        isWin = m.sr > m.sb;
+      }
+    }
+
+    // 🔥 filtre résultat
+    if (selectedPlayer) {
+       if (resultFilter === "win" && !isWin) return;
+       if (resultFilter === "loss" && isWin) return;
+}
+
+    const li = document.createElement("li");
+    li.classList.add("match-card");
+
+    const blueWin = m.sb > m.sr;
+
+    let date = "Date inconnue";
+    if (m.createdAt?.seconds) {
+      date = new Date(m.createdAt.seconds * 1000)
+        .toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "2-digit"
+        });
+    } else if (m.createdAtLocal) {
+      date = new Date(m.createdAtLocal)
+        .toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "2-digit"
+        });
+    }
+
+    li.innerHTML = `
+      <div class="match-row team-blue">
+        <span>🔵 ${m.b1}-${m.b2}</span>
+        <span class="score">${m.sb} ${blueWin ? "🏆" : ""}</span>
+      </div>
+
+      <div class="match-row team-red">
+        <span>🔴 ${m.r1}-${m.r2}</span>
+        <span class="score">${m.sr} ${!blueWin ? "🏆" : ""}</span>
+      </div>
+
+      <div class="date">
+        📅 ${date}
+      </div>
+    `;
+
+    list.appendChild(li);
+  });
 };
 
+
+// =========================
+// 📜 FILTER
+// =========================
+window.loadPlayersFilter = async function () {
+  const select = document.getElementById("historyPlayerFilter");
+  if (!select) return;
+
+  select.innerHTML = "<option value=''>-- Choisir joueur --</option>";
+
+  const snapshot = await getDocs(collection(db, "players"));
+
+  snapshot.forEach(doc => {
+    const p = doc.data();
+    const option = document.createElement("option");
+    option.value = p.name;
+    option.textContent = p.name;
+    select.appendChild(option);
+  });
+};
+
+// =========================
+// Commentaire
+// =========================
 window.loadComments = async function () {
   const list = document.getElementById("commentList");
   if (!list) return;
@@ -481,18 +485,18 @@ window.loadComments = async function () {
 
   snapshot.forEach((d) => {
     const c = d.data();
+
     const li = document.createElement("li");
     li.textContent = c.text;
+
     list.appendChild(li);
   });
 };
 
 // =========================
-// INIT
+// 🚀 INIT
 // =========================
-
 document.addEventListener("DOMContentLoaded", () => {
-  loadPlayers();
   loadPlayersBottom();
   loadMatches();
   loadComments();
