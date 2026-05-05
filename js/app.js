@@ -1,4 +1,4 @@
- let isTest = false;// passe à false en prod -> application en route et true pour faire des tests
+ let isTest = true;// passe à false en prod -> application en route et true pour faire des tests
 
 window.toggleTestMode = function () {
   isTest = !isTest;
@@ -212,15 +212,31 @@ window.afficherDemandes = async function () {
     div.style.marginBottom = "10px";
 
     div.innerHTML = `
-      ${data.name}
-      <button onclick="validerDemande('${docSnap.id}', '${data.name}')">
-        ✅ Valider
-      </button>
-    `;
+  <span style="font-weight:bold;">
+    ${data.name}
+  </span>
+
+  <button onclick="validerDemande('${docSnap.id}', '${data.name}')">
+    ✅
+  </button>
+
+  <button onclick="refuserDemande('${docSnap.id}')">
+    ❌
+  </button>
+`;
 
     container.appendChild(div);
   });
 };
+
+window.refuserDemande = async function (id) {
+  await deleteDoc(doc(db, "demandes", id));
+
+  alert("❌ Demande refusée");
+
+  afficherDemandes();
+};
+
 // =========================
 // valider demandes des joueurs
 // =========================
@@ -263,58 +279,78 @@ window.deletePlayer = async function (id) {
 // =========================
 // 💾 SAVE MATCH
 // =========================
+
+window.isSaving = false;
+
 window.saveMatch = async function () {
-  const sb = parseInt(document.getElementById("sb").value);
-  const sr = parseInt(document.getElementById("sr").value);
 
-  const b1 = document.getElementById("b1").value;
-  const b2 = document.getElementById("b2").value;
-  const r1 = document.getElementById("r1").value;
-  const r2 = document.getElementById("r2").value;
+  if (window.isSaving) return; // 🔥 bloque spam
+  window.isSaving = true;
 
-  if (isNaN(sb) || isNaN(sr))
-    return showScoreMessage("❌ Score invalide", "red");
+  const btn = document.querySelector(".btn-add");
+  btn.disabled = true;
 
-  if (sb === sr)
-    return showScoreMessage("❌ Match nul interdit", "red");
+  try {
 
-  const players = [b1, b2, r1, r2];
-  if (players.includes(""))
-    return showScoreMessage("❌ Choisis tous les joueurs", "red");
+    const sb = parseInt(document.getElementById("sb").value);
+    const sr = parseInt(document.getElementById("sr").value);
 
-  if (new Set(players).size !== 4)
-    return showScoreMessage("❌ Joueur en double", "red");
+    const b1 = document.getElementById("b1").value;
+    const b2 = document.getElementById("b2").value;
+    const r1 = document.getElementById("r1").value;
+    const r2 = document.getElementById("r2").value;
 
-  const match = {
-    b1,
-    b2,
-    r1,
-    r2,
-    sb,
-    sr,
-    createdAt: serverTimestamp(),
-    createdAtLocal: Date.now()
-  };
+    if (isNaN(sb) || isNaN(sr))
+      return showScoreMessage("❌ Score invalide", "red");
 
-  if (isTest) {
-  showScoreMessage("🧪 Mode test activé (rien enregistré)", "red");
-  return;
-}
-  await addDoc(collection(db, "matches"), match);
-  await updatePlayerStats(match);
-  await loadMatches();
+    if (sb === sr)
+      return showScoreMessage("❌ Match nul interdit", "red");
 
-  showScoreMessage("✅ Match enregistré", "green");
+    const players = [b1, b2, r1, r2];
+    if (players.includes(""))
+      return showScoreMessage("❌ Choisis tous les joueurs", "red");
 
-  // 🔥 RESET
-  document.getElementById("sb").value = "";
-  document.getElementById("sr").value = "";
+    if (new Set(players).size !== 4)
+      return showScoreMessage("❌ Joueur en double", "red");
 
-  document.getElementById("b1").selectedIndex = 0;
-  document.getElementById("b2").selectedIndex = 0;
-  document.getElementById("r1").selectedIndex = 0;
-  document.getElementById("r2").selectedIndex = 0;
+    const match = {
+      b1,
+      b2,
+      r1,
+      r2,
+      sb,
+      sr,
+      createdAt: serverTimestamp(),
+      createdAtLocal: Date.now()
+    };
+
+    if (isTest) {
+      showScoreMessage("🧪 Mode test activé", "red");
+      return;
+    }
+
+    await addDoc(collection(db, "matches"), match);
+    await updatePlayerStats(match);
+    await loadMatches();
+
+    showScoreMessage("✅ Match enregistré", "green");
+
+    // RESET
+    document.getElementById("sb").value = "";
+    document.getElementById("sr").value = "";
+
+    document.getElementById("b1").selectedIndex = 0;
+    document.getElementById("b2").selectedIndex = 0;
+    document.getElementById("r1").selectedIndex = 0;
+    document.getElementById("r2").selectedIndex = 0;
+
+  } finally {
+    // 🔥 toujours exécuté même si erreur
+    window.isSaving = false;
+    btn.disabled = false;
+  }
 };
+
 // =========================
 // 🏆 RANKING
 // =========================

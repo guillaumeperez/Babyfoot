@@ -462,6 +462,24 @@ footer {
   text-align: center;
 }
 
+/* =========================
+   Carré des messages 
+========================= */
+
+.beta-box {
+  margin-top: 10px;
+  background: #ffcc00;
+  color: black;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 16px; /* 🔥 plus gros */
+  text-align: center;
+  display: inline-block;
+  font-weight: bold; /* optionnel */
+}
+.header {
+  text-align: center;
+}
 
 /* =========================
    Accordion (régles)
@@ -578,4 +596,22 @@ body.no-scroll {
   position: fixed;
   width: 100%;
   touch-action: none; /* 🔥 bloque swipe */
+}
+
+/* =========================
+ Couleur admin acceptation de joueur 
+========================= */
+#adminPanel {
+  background: #1f2937; /* fond sombre */
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+#listeDemandes div {
+  background: #374151;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
 }
