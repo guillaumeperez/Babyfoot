@@ -1,4 +1,4 @@
- let isTest = true;// passe à false en prod -> application en route et true pour faire des tests
+ let isTest = false;// passe à false en prod -> application en route et true pour faire des tests
 
 window.toggleTestMode = function () {
   isTest = !isTest;
