@@ -1,3 +1,19 @@
+ let isTest = false;// passe à false en prod -> application en route et true pour faire des tests
+
+window.toggleTestMode = function () {
+  isTest = !isTest;
+
+  document.body.style.border = isTest ? "5px solid red" : "none";
+
+  if (isTest) {
+  console.log("%c🧪 MODE TEST ACTIVÉ", "color:red; font-size:16px;");
+} else {
+  console.log("%c🚀 MODE PROD ACTIVÉ", "color:green; font-size:16px;");
+}
+
+  alert("Mode test : " + (isTest ? "ON" : "OFF"));
+};
+
 // =========================
 // 🔥 IMPORTS FIREBASE
 // =========================
@@ -13,7 +29,8 @@ import {
   serverTimestamp,
   deleteDoc,
   query,
-  orderBy
+  orderBy,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import {
@@ -28,7 +45,7 @@ import { updateElo2v2 } from "./elo.js";
 // ⚙️ CONFIG FIREBASE
 // =========================
 const firebaseConfig = {
-  apiKey: "AIzaSy...",
+  apiKey: "AIzaSyA-B2_flq7AmCCr3I6iigHRbKLuS3gMSrY",
   authDomain: "babyfoot-a78f5.firebaseapp.com",
   projectId: "babyfoot-a78f5",
   storageBucket: "babyfoot-a78f5.firebasestorage.app",
@@ -36,13 +53,9 @@ const firebaseConfig = {
   appId: "1:579925171552:web:b6faf8313581b7b8dd5205"
 };
 
-// =========================
-// 🚀 INIT
-// =========================
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-
 // =========================
 // 🔐 LOGIN ADMIN
 // =========================
@@ -67,7 +80,17 @@ window.loginAdmin = async function () {
 let isAdmin = false;
 
 onAuthStateChanged(auth, (user) => {
-  isAdmin = !!user;
+  const panel = document.getElementById("adminPanel");
+  if (!panel) return; // 🔥 important
+
+  if (user && user.email === "guillaumeper34@gmail.com") {
+    isAdmin = true;
+    panel.style.display = "block";
+    afficherDemandes();
+  } else {
+    isAdmin = false;
+    panel.style.display = "none";
+  }
 });
 
 // =========================
@@ -131,27 +154,29 @@ window.addPlayer = async function () {
 
   name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 
-  const snapshot = await getDocs(collection(db, "players"));
+  if (isTest) {
+    return showPlayerMessage("🧪 Mode test activé", "red");
+  }
+
+  // 🔍 Vérifie si déjà en attente
+  const snapshot = await getDocs(collection(db, "demandes"));
 
   const exists = snapshot.docs.some(
     d => d.data().name.toLowerCase() === name.toLowerCase()
   );
 
-  if (exists) return showPlayerMessage("❌ Joueur déjà existant", "red");
+  if (exists) {
+    return showPlayerMessage("⏳ Déjà en attente de validation", "orange");
+  }
 
-  await addDoc(collection(db, "players"), {
-    name,
-    wins: 0,
-    losses: 0,
-    elo: 2000
+  await addDoc(collection(db, "demandes"), {
+    name: name,
+    date: new Date()
   });
 
   input.value = "";
 
-  await loadPlayersBottom();
-  await loadPlayersSelect();
-
-  showPlayerMessage(`✅ ${name} ajouté`, "green");
+  showPlayerMessage(`📩 Demande envoyée pour ${name}`, "green");
 };
 
 function showPlayerMessage(text, color) {
@@ -166,10 +191,68 @@ function showPlayerMessage(text, color) {
 }
 
 // =========================
+// Afficher les demandes des joueurs
+// =========================
+
+window.afficherDemandes = async function () {
+  const container = document.getElementById("listeDemandes");
+  container.innerHTML = "";
+
+  const snapshot = await getDocs(collection(db, "demandes"));
+
+  if (snapshot.empty) {
+    container.innerHTML = "Aucune demande";
+    return;
+  }
+
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+
+    const div = document.createElement("div");
+    div.style.marginBottom = "10px";
+
+    div.innerHTML = `
+      ${data.name}
+      <button onclick="validerDemande('${docSnap.id}', '${data.name}')">
+        ✅ Valider
+      </button>
+    `;
+
+    container.appendChild(div);
+  });
+};
+// =========================
+// valider demandes des joueurs
+// =========================
+
+window.validerDemande = async function (id, name) {
+  // Ajoute dans players
+  await setDoc(doc(db, "players", name.toLowerCase()), {
+    name: name,
+    wins: 0,
+    losses: 0,
+    elo: 2000
+  });
+
+  // Supprime la demande
+  await deleteDoc(doc(db, "demandes", id));
+
+  alert(`✅ ${name} validé`);
+
+  // Recharge la liste
+  afficherDemandes();
+
+  // Recharge les joueurs
+  loadPlayersBottom();
+  loadPlayersSelect();
+};
+
+// =========================
 // 🗑 DELETE PLAYER
 // =========================
 window.deletePlayer = async function (id) {
   if (!confirm("Supprimer ?")) return;
+  if (isTest) return;
 
   await deleteDoc(doc(db, "players", id));
 
@@ -189,10 +272,15 @@ window.saveMatch = async function () {
   const r1 = document.getElementById("r1").value;
   const r2 = document.getElementById("r2").value;
 
-  if (isNaN(sb) || isNaN(sr)) return showScoreMessage("❌ Score invalide", "red");
+  if (isNaN(sb) || isNaN(sr))
+    return showScoreMessage("❌ Score invalide", "red");
+
+  if (sb === sr)
+    return showScoreMessage("❌ Match nul interdit", "red");
 
   const players = [b1, b2, r1, r2];
-  if (players.includes("")) return showScoreMessage("❌ Choisis tous les joueurs", "red");
+  if (players.includes(""))
+    return showScoreMessage("❌ Choisis tous les joueurs", "red");
 
   if (new Set(players).size !== 4)
     return showScoreMessage("❌ Joueur en double", "red");
@@ -205,18 +293,28 @@ window.saveMatch = async function () {
     sb,
     sr,
     createdAt: serverTimestamp(),
-    createdAtLocal: Date.now() // 🔥 IMPORTANT
+    createdAtLocal: Date.now()
   };
 
+  if (isTest) {
+  showScoreMessage("🧪 Mode test activé (rien enregistré)", "red");
+  return;
+}
   await addDoc(collection(db, "matches"), match);
   await updatePlayerStats(match);
-
-  // 🔥 recharge direct l'historique
   await loadMatches();
 
   showScoreMessage("✅ Match enregistré", "green");
-};
 
+  // 🔥 RESET
+  document.getElementById("sb").value = "";
+  document.getElementById("sr").value = "";
+
+  document.getElementById("b1").selectedIndex = 0;
+  document.getElementById("b2").selectedIndex = 0;
+  document.getElementById("r1").selectedIndex = 0;
+  document.getElementById("r2").selectedIndex = 0;
+};
 // =========================
 // 🏆 RANKING
 // =========================
@@ -293,7 +391,11 @@ top3.forEach((p, i) => {
     if (diff > 0) color = "#22c55e";
     if (diff < 0) color = "#ef4444";
 
-    const form = p.history.map(r => r === "W" ? "🟢" : "🔴").join("");
+    const form = p.history.map(r => {
+  if (r === "W" || r === "w") return "🟢";
+  if (r === "L" || r === "l") return "🔴";
+  return r; // déjà emoji
+}).join("");
 
     const tr = document.createElement("tr");
 
@@ -321,17 +423,30 @@ async function updatePlayerStats(match) {
 
   snapshot.forEach(d => {
     const p = d.data();
+
     if ([match.b1, match.b2, match.r1, match.r2].includes(p.name)) {
-      joueurs.push({ ...p, id: d.id, oldElo: p.elo || 2000, history: p.history || [] });
+      joueurs.push({
+        ...p,
+        id: d.id,
+        oldElo: p.elo || 2000,
+        history: p.history || []
+      });
     }
   });
 
-  const teamBleu = joueurs.filter(j => [match.b1, match.b2].includes(j.name));
-  const teamRouge = joueurs.filter(j => [match.r1, match.r2].includes(j.name));
+  const teamBleu = joueurs.filter(j =>
+    [match.b1, match.b2].includes(j.name)
+  );
 
-  const blueWin = match.sb > match.sr ? 1 : 0;
+  const teamRouge = joueurs.filter(j =>
+    [match.r1, match.r2].includes(j.name)
+  );
 
-  updateElo2v2(teamBleu, teamRouge, blueWin);
+  // ✅ BOOLÉEN (IMPORTANT)
+  const blueWin = match.sb > match.sr;
+
+  // 🔧 ELO (si ta fonction attend 1/0)
+  updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
 
   for (const j of joueurs) {
 
@@ -340,15 +455,22 @@ async function updatePlayerStats(match) {
 
     const isBlue = [match.b1, match.b2].includes(j.name);
 
-    if ((isBlue && blueWin) || (!isBlue && !blueWin)) {
+    // ✅ logique claire
+    const isWinner =
+      (isBlue && blueWin) || (!isBlue && !blueWin);
+
+    if (isWinner) {
       wins++;
-      j.history.push("W");
+      j.history.push("🟢");
     } else {
       losses++;
-      j.history.push("L");
+      j.history.push("🔴");
     }
 
-    if (j.history.length > 5) j.history.shift();
+    // 🔒 limite historique à 5
+    if (j.history.length > 5) {
+      j.history.shift();
+    }
 
     await updateDoc(doc(db, "players", j.id), {
       wins,
@@ -497,6 +619,17 @@ window.loadComments = async function () {
 // 🚀 INIT
 // =========================
 document.addEventListener("DOMContentLoaded", () => {
+
+  // 🔥 MODE TEST VISUEL
+  if (isTest) {
+    document.body.style.border = "5px solid red";
+  }
+  if (isTest) {
+  console.log("🧪 MODE TEST ACTIVÉ");
+} else {
+  console.log("🚀 MODE PROD ACTIVÉ");
+}
+
   loadPlayersBottom();
   loadMatches();
   loadComments();
