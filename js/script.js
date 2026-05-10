@@ -16,6 +16,23 @@ function openModal(id) {
 
   document.body.classList.add("no-scroll");
   document.body.style.top = `-${scrollY}px`;
+
+  // 🔥 réinitialise les onglets du tournoi
+  if (id === "tournament") {
+    document
+      .querySelectorAll(".tournament-tab")
+      .forEach(el => {
+        el.style.display = "none";
+      });
+    document.querySelector(".tournament-menu").style.display = "block";
+    // Par défaut, ouvre la liste des tournois en cours / podium récent
+    if (typeof openTournamentTab === "function") {
+      openTournamentTab("active");
+    }
+    if (typeof loadTournaments === "function") {
+      loadTournaments();
+    }
+  }
 }
 
 // Ferme une modale
@@ -122,6 +139,8 @@ document.querySelectorAll(".accordion").forEach(btn => {
     this.classList.toggle("active");
 
     const panel = this.nextElementSibling;
+    
+    if (!panel) return;
 
     if (panel.style.display === "block") {
       panel.style.display = "none";

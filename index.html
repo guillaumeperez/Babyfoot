@@ -21,8 +21,8 @@
 💬 Informations
 ========================= -->
 <div class="beta-box">
-  ⚠️ Version bêta<br>
-  Désolé pour les bugs
+  ⚠️ Version bêta - Désolé pour les bugs<br>
+  La nouvelle fonctionnalité est arrivée : Tournoi !<br>
 </div>
 
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -74,49 +74,276 @@
 </div>
 
 <!-- =========================
-🏆 TOURNOI
-========================= -->
-<div id="tournament" class="modal">
-  <div class="box">
-
-    <h3>🏆 Tournoi</h3>
-
-    <p>🚧 Fonction à venir</p>
-
-    <button onclick="closeModal('tournament')" class="btn-danger">
-        <img src="img/closed.png" alt="">
-            Fermer
-    </button>
-
-  </div>
-</div>
-
-<!-- =========================
 👥 JOUEURS
 ========================= -->
 <div id="players" class="modal">
   <div class="box">
+    <h3 class="title">Joueurs</h3>
 
-    <h3 class="title"> <img src="img/ajouterunjoueur.png" alt="">   Ajouter un joueur </h3>
+    <input
+      id="playerInput"
+      type="text"
+      placeholder="Nom du joueur"
+      oninput="validatePlayer()"
+    >
 
-    <input id="playerInput" placeholder="Nom du joueur">
+    <div id="playerError" class="error-message" style="display:none;"></div>
+
+    <div class="actions">
+      <button onclick="addPlayer()" class="btn-add">
+        <img src="img/addPlayer.png" alt="">
+        Ajouter joueur
+      </button>
+      <button onclick="closeModal('players')" class="btn-danger">
+        <img src="img/closed.png" alt="">
+        Fermer
+      </button>
+    </div>
 
     <div id="playerMessage"></div>
+  </div>
+</div>
 
-    <div class="actions">  <button onclick="addPlayer()" class="btn-add">
-        <img src="img/addPlayer.png" alt="">
-            Ajouter
-    </button>
+<!-- =========================
+🏆 TOURNOI
+========================= -->
+<div id="tournament" class="modal">
 
-  <button onclick="closeModal('players')" class="btn-danger">
-        <img src="img/closed.png" alt="">
-            Fermer
+  <div class="box tournament-box">
+
+    <h3 class="title">
+      <img src="img/tournament.png" alt="">
+      Tournois
+    </h3>
+
+    <div class="tournament-menu">
+
+  
+      <!-- CREATE -->
+      <button
+        class="accordion"
+        onclick="openTournamentTab('create')"
+      >
+        ➕ Créer tournoi
+      </button>
+
+      <!-- MATCHES -->
+      <button
+        class="accordion"
+        onclick="openTournamentTab('active')"
+      >
+        ⚔️ Tournoi en cours
+      </button>
+
+      <!-- RANKING -->
+      <button
+        class="accordion"
+        onclick="openTournamentTab('ranking')"
+      >
+        🏆 Classements
+      </button>
+
+      <!-- HISTORY -->
+      <button
+        class="accordion"
+        onclick="openTournamentTab('history')"
+      >
+        📜 Historique
+      </button>
+
+    </div>
+
+<!-- =========================
+CREATE TOURNAMENT
+========================= -->
+<div
+  id="tournament-create"
+  class="tournament-tab"
+  style="display:none;"
+>
+ <h4>📊 Système de points</h4>
+
+<div class="points-grid">
+
+  <div>
+    <label>Victoire <span class="points-label">(points)</span></label>
+    <input class="tournament-point-input" id="winPoints" type="number" value="3">
+  </div>
+
+  <div>
+    <label>Défaite <span class="points-label">(points)</span></label>
+    <input class="tournament-point-input" id="lossPoints" type="number" value="0">
+  </div>
+
+  <div>
+    <label>Bonus offensif <span class="points-label">(points)</span></label>
+    <input class="tournament-point-input" id="offBonus" type="number" value="1">
+  </div>
+
+  <div>
+    <label>Bonus défensif <span class="points-label">(points)</span></label>
+    <input class="tournament-point-input" id="defBonus" type="number" value="1">
+  </div>
+
+</div>
+  <label>Nom du tournoi</label>
+
+  <input
+    id="tournamentName"
+    type="text"
+    placeholder="Ex: Tournoi AGAP"
+  >
+
+  <label>Création des équipes</label>
+
+  <select id="teamMode">
+    <option value="random">
+      🔀 Aléatoire
+    </option>
+
+    <option value="elo">
+      ⚖️ Équilibré ELO
+    </option>
+  </select>
+
+  <div class="checkbox-line">
+
+    <input
+      type="checkbox"
+      id="doubleRound"
+      checked
+    >
+
+    <label for="doubleRound">
+      Match aller / retour
+    </label>
+
+  </div>
+
+  <div class="actions">
+
+  <button
+    onclick="createTournament()"
+    class="btn-add"
+  >
+    <img src="img/save.png" alt="">
+    Créer tournoi
+  </button>
+
+  <button
+    onclick="closeModal('tournament')"
+    class="btn-danger"
+  >
+    <img src="img/closed.png" alt="">
+    Fermer
+  </button>
+
+</div>
+</div>
+
+<!-- ACTIVE TOURNAMENTS -->
+<div
+  id="tournament-active"
+  class="tournament-tab"
+  style="display:none;"
+>
+  <h3>⚔️ Tournoi en cours</h3>
+
+  <div id="activeTournaments"></div>
+
+  <h4>🏅 Podium récent (48h)</h4>
+  <div id="recentTournaments"></div>
+
+  <div class="actions">
+    <button onclick="closeModal('tournament')" class="btn-danger">
+      <img src="img/closed.png" alt="">
+      Fermer
     </button>
+  </div>
+
+</div>
+
+
+<!-- MATCHES -->
+<div
+  id="tournament-matches"
+  class="tournament-tab"
+  style="display:none;"
+>
+
+  <h3>⚔️ Matchs</h3>
+
+  <div id="tournamentMatches"></div>
+
+  <div class="actions">
+    <button onclick="closeModal('tournament')" class="btn-danger">
+      <img src="img/closed.png" alt="">
+      Fermer
+    </button>
+  </div>
+
+</div>
+
+<!-- RANKING -->
+<div
+  id="tournament-ranking"
+  class="tournament-tab"
+  style="display:none;"
+>
+
+  <h3>🏆 Classement</h3>
+
+  <div id="tournamentWinner"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Équipe</th>
+        <th>Pts</th>
+        <th>V</th>
+        <th>D</th>
+      </tr>
+    </thead>
+
+    <tbody id="tournamentRanking"></tbody>
+  </table>
+
+  <div class="actions">
+    <button onclick="closeModal('tournament')" class="btn-danger">
+      <img src="img/closed.png" alt="">
+      Fermer
+    </button>
+  </div>
+
+</div>
+
+<!-- HISTORY -->
+<div
+  id="tournament-history"
+  class="tournament-tab"
+  style="display:none;"
+>
+
+  <h3>📜 Historique</h3>
+  <div id="finishedTournaments"></div>
+
+  <div class="actions">
+    <button onclick="closeModal('tournament')" class="btn-danger">
+      <img src="img/closed.png" alt="">
+      Fermer
+    </button>
+  </div>
+
+</div>
+
+</div>
 </div>
 
 
   </div>
 </div>
+
 
 <!-- =========================
 Ajout de joueur
@@ -125,8 +352,6 @@ Ajout de joueur
   <h3>📩 Demandes en attente</h3>
   <div id="listeDemandes"></div>
 </div>
-
-
 
 <!-- =========================
 ➕ SCORE
@@ -196,10 +421,12 @@ Ajout de joueur
       <tbody id="rankingList"></tbody>
     </table>
 
-    <button onclick="closeModal('ranking')" class="btn-danger">
+    <div class="actions">
+      <button onclick="closeModal('ranking')" class="btn-danger">
         <img src="img/closed.png" alt="">
-            Fermer
-    </button>
+        Fermer
+      </button>
+    </div>
 
   </div>
 </div>
@@ -260,17 +487,26 @@ Ajout de joueur
     <button class="accordion">🏆 Tournoi</button>
     <div class="panel">
       <ul>
-        <li>📌 Format à définir</li>
-        <li>⚙️ Classement par victoires</li>
+        <li>📌 Le tournoi se joue en matchs 2v2.</li>
+        <li>🎯 Chaque match se joue en 10 points (premier à 10 gagne).</li>
+        <li>🔀 Les équipes sont créées en mode aléatoire ou équilibré ELO selon le choix.</li>
+        <li>📊 Les valeurs de points sont personnalisables : tu peux mettre ce que tu souhaites pour victoire, défaite et bonus.</li>
+        <li>✅ Exemple : Victoire = 3 points, Défaite = 0 point, Bonus offensif = 1 point, Bonus défensif = 1 point.</li>
+        <li>🧠 Si tu coches « match aller / retour », cela ajoute un match de retour, mais cela ne transforme pas le tournoi entier en un format spécial.</li>
+        <li>⚖️ En cas d'égalité de points, le classement se fait par différence de buts, puis par nombre de victoires.</li>
+        <li>🚨 Une équipe qui abandonne ou ne joue pas reçoit un score de 0 et l'autre équipe gagne.</li>
+        <li>📌 Après chaque match, le classement et l'historique sont mis à jour automatiquement.</li>
       </ul>
     </div>
 
     <br>
 
-    <button onclick="closeModal('rules')" class="btn-danger">
+    <div class="actions">
+      <button onclick="closeModal('rules')" class="btn-danger">
         <img src="img/closed.png" alt="">
-            Fermer
-    </button>
+        Fermer
+      </button>
+    </div>
 
   </div>
 </div>
@@ -300,10 +536,12 @@ Ajout de joueur
       <ul id="matchHistory"></ul>
     </div>
 
-    <button onclick="closeModal('history')" class="btn-danger">
+    <div class="actions">
+      <button onclick="closeModal('history')" class="btn-danger">
         <img src="img/closed.png" alt="">
-            Fermer
-    </button>
+        Fermer
+      </button>
+    </div>
 
   </div>
 </div>
