@@ -40,6 +40,7 @@ function closeModal(id) {
   const modal = document.getElementById(id);
   if (!modal) return;
 
+ 
   modal.style.display = "none";
 
   document.body.classList.remove("no-scroll");
@@ -100,16 +101,35 @@ function limitScore(input){
    📜 HISTORIQUE
 ========================= */
 
-// Ouvre l'historique
+// Ouvre l'historique ET la tendance (côte à côte)
 function openHistory() {
-  openModal("history");
 
-  // 🔥 Charger le filtre joueurs
+  const history = document.getElementById("history");
+
+  if (!history) return;
+
+  // ouvre UNE SEULE modale
+  history.style.display = "flex";
+
+  // sauvegarde scroll
+  scrollY = window.scrollY;
+
+  document.body.classList.add("no-scroll");
+  document.body.style.top = `-${scrollY}px`;
+
+  // chargements
   loadPlayersFilter();
 
-  // 🔥 Charger les matchs
-  loadMatches();
+  if (typeof loadPlayersTrendFilter === "function") {
+    loadPlayersTrendFilter();
+  }
+
+  if (typeof loadPlayerEloTrend === "function") {
+    loadPlayerEloTrend();
+  }
+
 }
+
 
 
 /* =========================
@@ -130,7 +150,6 @@ function openRanking(){
   }
   openModal("ranking");
 }
-
 
 
 document.querySelectorAll(".accordion").forEach(btn => {

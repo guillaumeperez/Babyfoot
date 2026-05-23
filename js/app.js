@@ -1,26 +1,17 @@
-let isTest =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1"; 
+function getAppMode() {
+  const host = window.location.hostname;
 
-window.currentTournamentId = null;
+  const isLocal =
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "" ||
+    host === "0.0.0.0";
 
-window.toggleTestMode = function () {
-  isTest = !isTest;
-
-  document.body.style.border = isTest ? "5px solid red" : "none";
-
-  if (isTest) {
-  console.log("%c🧪 MODE TEST ACTIVÉ", "color:red; font-size:16px;");
-} else {
-  console.log("%c🚀 MODE PROD ACTIVÉ", "color:green; font-size:16px;");
+  return isLocal ? "test" : "prod";
 }
 
-  alert("Mode test : " + (isTest ? "ON" : "OFF"));
-};
+window.APP_MODE = getAppMode();
 
-// =========================
-// 🔥 IMPORTS FIREBASE
-// =========================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
 import {
@@ -41,10 +32,67 @@ import {
 import {
   getAuth,
   signInWithEmailAndPassword,
+  signOut,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 import { updateElo2v2 } from "./elo.js";
+
+// =========================
+// 🧪 MODE TEST
+// =========================
+
+function testLog(action, data) {
+  console.log("🧪 TEST MODE:", action, data);
+}
+
+function isTestMode() {
+  return window.APP_MODE === "test";
+}
+
+// =========================
+// ⚙️ Wrappers SAFE FIREBASE
+// =========================
+async function safeSetDoc(ref, data) {
+  if (isTestMode()) {
+    console.log("🧪 [TEST] setDoc bloqué", data);
+    return;
+  }
+  return await setDoc(ref, data);
+}
+
+async function safeAddDoc(ref, data) {
+  if (isTestMode()) {
+    console.log("🧪 [TEST] addDoc bloqué", data);
+    return { id: "test-id" };
+  }
+  return await addDoc(ref, data);
+}
+
+async function safeUpdateDoc(ref, data) {
+  if (isTestMode()) {
+    console.log("🧪 [TEST] updateDoc bloqué", data);
+    return;
+  }
+  return await updateDoc(ref, data);
+}
+async function safeDeleteDoc(ref) {
+  if (isTestMode()) {
+    console.log("🧪 [TEST] deleteDoc bloqué");
+    return;
+  }
+  return await deleteDoc(ref);
+}
+
+async function safeGetDoc(ref) {
+  return await getDoc(ref);
+}
+
+async function safeGetDocs(q) {
+  return await getDocs(q);
+}
+
+
 
 // =========================
 // ⚙️ CONFIG FIREBASE
@@ -61,6 +109,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+
+
 // =========================
 // 🔐 LOGIN ADMIN
 // =========================
@@ -79,30 +130,256 @@ window.loginAdmin = async function () {
   }
 };
 
+window.loginAdmin = async function () {
+  const email = prompt("Email admin");
+  const password = prompt("Mot de passe");
+
+  if (!email || !password) return;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+
+    // ✅ AFFICHAGE ADMIN PANEL
+    const panel = document.getElementById("adminPanel");
+    if (panel) panel.style.display = "block";
+
+    alert("✅ Admin connecté");
+
+  } catch (e) {
+    console.error(e);
+    alert("❌ Erreur connexion");
+  }
+};
+window.isAdmin = false;
+
+onAuthStateChanged(auth, (user) => {
+
+  const panel = document.getElementById("adminPanel");
+  const badge = document.getElementById("adminBadge");
+
+  window.isAdmin = !!user;
+
+  if (panel) panel.style.display = user ? "block" : "none";
+  if (badge) badge.style.display = user ? "block" : "none";
+
+  // 🔁 reload historique pour recalcul UI
+  loadMatches?.();
+});
+
+// =========================
+// 🚪 LOGOUT ADMIN
+// =========================
+window.logoutAdmin = async function () {
+  try {
+    await signOut(auth);
+
+    const panel = document.getElementById("adminPanel");
+    if (panel) panel.style.display = "none";
+
+    alert("🚪 Déconnecté");
+
+  } catch (e) {
+    console.error(e);
+    alert("❌ Erreur déconnexion");
+  }
+};
+
 // =========================
 // 👤 ADMIN STATE
 // =========================
 let isAdmin = false;
 
-onAuthStateChanged(auth, (user) => {
-  const panel = document.getElementById("adminPanel");
-  if (!panel) return; // 🔥 important
+window.isAdmin = false;
 
+onAuthStateChanged(auth, (user) => {
+
+  const panel = document.getElementById("adminPanel");
+  const badge = document.getElementById("adminBadge");
+
+  // 🔐 SEUL TON EMAIL EST ADMIN
   if (user && user.email === "guillaumeper34@gmail.com") {
-    isAdmin = true;
-    panel.style.display = "block";
-    afficherDemandes();
+
+    window.isAdmin = true;
+
+    if (panel) panel.style.display = "block";
+    if (badge) badge.style.display = "block";
+
+    // option si tu as des demandes admin
+    afficherDemandes?.();
+
   } else {
-    isAdmin = false;
-    panel.style.display = "none";
+
+    window.isAdmin = false;
+
+    if (panel) panel.style.display = "none";
+    if (badge) badge.style.display = "none";
   }
+
+  // 🔁 refresh UI historique
+  loadMatches?.();
 });
+
+// =========================
+//  ADMIN 
+// =========================
+
+
+//  Supp les matchs
+
+window.resetAllMatches = async function () {
+
+  const confirmReset = confirm(
+    "⚠️ Supprimer TOUS les matchs ?"
+  );
+
+  if (!confirmReset) return;
+
+  const snapshot = await getDocs(
+    collection(db, "matches")
+  );
+
+  for (const d of snapshot.docs) {
+    await deleteDoc(doc(db, "matches", d.id));
+  }
+
+  alert("✅ Tous les matchs supprimés");
+
+  loadMatches?.();
+  loadRanking?.();
+};
+
+
+//  Supp les tournois
+window.resetAllTournaments = async function () {
+
+  const confirmReset = confirm(
+    "⚠️ Supprimer TOUS les tournois ?"
+  );
+
+  if (!confirmReset) return;
+
+  const snapshot = await getDocs(
+    collection(db, "tournaments")
+  );
+
+  for (const d of snapshot.docs) {
+    await deleteDoc(doc(db, "tournaments", d.id));
+  }
+
+  alert("✅ Tous les tournois supprimés");
+};
+
+//  Reset elo + classement
+window.resetAllElo = async function () {
+
+  const confirmReset = confirm(
+    "⚠️ Reset du classement ELO ?"
+  );
+
+  if (!confirmReset) return;
+
+  const snapshot = await getDocs(
+    collection(db, "players")
+  );
+
+  for (const d of snapshot.docs) {
+
+    await updateDoc(
+      doc(db, "players", d.id),
+      {
+        elo: 2000,
+        victory: 0,
+        defeat: 0,
+        goals: 0,
+        goalsAgainst: 0,
+        games: 0
+      }
+    );
+  }
+
+  alert("✅ Classement reset");
+  loadRanking?.();
+};
+
+// Supprime un joueur
+window.deletePlayer = async function (playerId) {
+
+  const confirmDelete = confirm(
+    "⚠️ Supprimer ce joueur ?"
+  );
+
+  if (!confirmDelete) return;
+
+  await deleteDoc(
+    doc(db, "players", playerId)
+  );
+
+  alert("✅ Joueur supprimé");
+
+  loadPlayers?.();
+  loadRanking?.();
+};
+
+// RESET COMPLET ☢
+window.fullReset = async function () {
+
+  const confirmReset = confirm(
+    "☢ RESET COMPLET APPLICATION ?"
+  );
+
+  if (!confirmReset) return;
+
+  // MATCHS
+  const matches = await getDocs(
+    collection(db, "matches")
+  );
+
+  for (const d of matches.docs) {
+    await deleteDoc(doc(db, "matches", d.id));
+  }
+
+  // TOURNOIS
+  const tournaments = await getDocs(
+    collection(db, "tournaments")
+  );
+
+  for (const d of tournaments.docs) {
+    await deleteDoc(doc(db, "tournaments", d.id));
+  }
+
+  // RESET JOUEURS
+  const players = await getDocs(
+    collection(db, "players")
+  );
+
+  for (const d of players.docs) {
+
+    await updateDoc(
+      doc(db, "players", d.id),
+      {
+        elo: 1000,
+        victory: 0,
+        defeat: 0,
+        goals: 0,
+        goalsAgainst: 0,
+        games: 0
+      }
+    );
+  }
+
+  alert("☢ RESET COMPLET TERMINÉ");
+
+  loadRanking?.();
+  loadMatches?.();
+  loadPlayers?.();
+};
 
 // =========================
 // 🎯 SELECT JOUEURS
 // =========================
 window.loadPlayersSelect = async function () {
-  const snapshot = await getDocs(collection(db, "players"));
+  const snapshot = await safeGetDocs(collection(db, "players"));
+  if (!snapshot || !snapshot.forEach) return;
   const selects = ["b1", "b2", "r1", "r2"];
 
   selects.forEach(id => {
@@ -136,12 +413,12 @@ window.addPlayer = async function () {
 
   name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 
-  if (isTest) {
+  if (window.APP_MODE === "test") {
     return showPlayerMessage("🧪 Mode test activé", "red");
   }
 
   // 🔍 Vérifie si déjà en attente
-  const snapshot = await getDocs(collection(db, "demandes"));
+  const snapshot = await safeGetDocs(collection(db, "demandes"));
 
   const exists = snapshot.docs.some(
     d => d.data().name.toLowerCase() === name.toLowerCase()
@@ -151,7 +428,7 @@ window.addPlayer = async function () {
     return showPlayerMessage("⏳ Déjà en attente de validation", "orange");
   }
 
-  await addDoc(collection(db, "demandes"), {
+  await safeAddDoc(collection(db, "demandes"), {
     name: name,
     date: new Date()
   });
@@ -167,7 +444,7 @@ window.addComment = async function () {
 
   if (!text) return;
 
-  await addDoc(collection(db, "comments"), {
+  await safeAddDoc(collection(db, "comments"), {
     text,
     createdAt: serverTimestamp()
   });
@@ -200,7 +477,7 @@ window.afficherDemandes = async function () {
   const container = document.getElementById("listeDemandes");
   container.innerHTML = "";
 
-  const snapshot = await getDocs(collection(db, "demandes"));
+  const snapshot = await safeGetDocs(collection(db, "demandes"));
 
   if (snapshot.empty) {
     container.innerHTML = "Aucune demande";
@@ -232,7 +509,7 @@ window.afficherDemandes = async function () {
 };
 
 window.refuserDemande = async function (id) {
-  await deleteDoc(doc(db, "demandes", id));
+  await safeDeleteDoc(doc(db, "demandes", id));
 
   alert("❌ Demande refusée");
 
@@ -245,7 +522,7 @@ window.refuserDemande = async function (id) {
 
 window.validerDemande = async function (id, name) {
   // Ajoute dans players
-  await setDoc(doc(db, "players", name.toLowerCase()), {
+  await safeSetDoc(doc(db, "players", name.toLowerCase()), {
     name: name,
     wins: 0,
     losses: 0,
@@ -253,7 +530,7 @@ window.validerDemande = async function (id, name) {
   });
 
   // Supprime la demande
-  await deleteDoc(doc(db, "demandes", id));
+  await safeDeleteDoc(doc(db, "demandes", id));
 
   alert(`✅ ${name} validé`);
 
@@ -268,10 +545,15 @@ window.validerDemande = async function (id, name) {
 // 🗑 DELETE PLAYER
 // =========================
 window.deletePlayer = async function (id) {
-  if (!confirm("Supprimer ?")) return;
-  if (isTest) return;
+  if (!isAdmin) {
+    alert("❌ Admin requis");
+    return;
+  }
 
-  await deleteDoc(doc(db, "players", id));
+  if (!confirm("Supprimer ?")) return;
+  if (window.APP_MODE === "test") return;
+
+  await safeDeleteDoc(doc(db, "players", id));
 
   loadPlayersSelect();
 };
@@ -296,7 +578,7 @@ window.backupPlayerELO = async function (playerName) {
 };
 
 window.backupAllPlayersELO = async function () {
-  const snapshot = await getDocs(collection(db, "players"));
+  const snapshot = await safeGetDocs(collection(db, "players"));
   snapshot.forEach(docSnap => {
     const name = docSnap.id;
     eloBackup[name] = {
@@ -319,7 +601,7 @@ window.restorePlayerELO = async function (playerName) {
   const backup = eloBackup[key];
   
   try {
-    await updateDoc(doc(db, "players", key), {
+    await safeUpdateDoc(doc(db, "players", key), {
       elo: backup.elo,
       wins: backup.wins,
       losses: backup.losses
@@ -346,7 +628,7 @@ window.deleteMatch = async function (matchId) {
 
   try {
     const matchRef = doc(db, "matches", matchId);
-    const matchSnap = await getDoc(matchRef);
+    const matchSnap = await safeGetDoc(matchRef);
 
     if (!matchSnap.exists()) {
       alert("❌ Match non trouvé");
@@ -355,30 +637,81 @@ window.deleteMatch = async function (matchId) {
 
     const match = matchSnap.data();
 
-    // 🔥 backup ELO des joueurs concernés
-    if (match.blueTeam) {
-      await backupPlayerELO(match.blueTeam.player1);
-      await backupPlayerELO(match.blueTeam.player2);
+// =========================
+// 🔥 RESTORE ELO BEFORE MATCH
+// =========================
+
+if (match.eloBefore) {
+
+  const players = [
+    {
+      name: match.b1,
+      elo: match.eloBefore.b1,
+      diff: match.eloChange?.b1 || 0
+    },
+    {
+      name: match.b2,
+      elo: match.eloBefore.b2,
+      diff: match.eloChange?.b2 || 0
+    },
+    {
+      name: match.r1,
+      elo: match.eloBefore.r1,
+      diff: match.eloChange?.r1 || 0
+    },
+    {
+      name: match.r2,
+      elo: match.eloBefore.r2,
+      diff: match.eloChange?.r2 || 0
     }
-    if (match.redTeam) {
-      await backupPlayerELO(match.redTeam.player1);
-      await backupPlayerELO(match.redTeam.player2);
+  ];
+
+  for (const p of players) {
+
+    if (!p.name) continue;
+
+    const playerRef = doc(
+      db,
+      "players",
+      p.name.toLowerCase()
+    );
+
+    const playerSnap =
+      await safeGetDoc(playerRef);
+
+    if (!playerSnap.exists()) continue;
+
+    const data = playerSnap.data();
+
+    let wins = data.wins || 0;
+    let losses = data.losses || 0;
+
+    // retire victoire/défaite
+    if (p.diff > 0) {
+      wins = Math.max(0, wins - 1);
+    } else {
+      losses = Math.max(0, losses - 1);
     }
+
+    // retire historique récent
+    let history = [...(data.history || [])];
+
+    if (history.length > 0) {
+      history.pop();
+    }
+
+    await safeUpdateDoc(playerRef, {
+      elo: p.elo,
+      wins,
+      losses,
+      history,
+      lastDiff: 0
+    });
+  }
+}
 
     // Delete match
-    await deleteDoc(matchRef);
-
-    // 🔥 restore ELO si match était joué
-    if (match.played) {
-      if (match.blueTeam) {
-        await restorePlayerELO(match.blueTeam.player1);
-        await restorePlayerELO(match.blueTeam.player2);
-      }
-      if (match.redTeam) {
-        await restorePlayerELO(match.redTeam.player1);
-        await restorePlayerELO(match.redTeam.player2);
-      }
-    }
+    await safeDeleteDoc(matchRef);
 
     alert("✅ Match supprimé (ELO restauré si joué)");
     loadMatches();
@@ -405,23 +738,23 @@ window.deleteTournament = async function (tournamentId) {
     await backupAllPlayersELO();
 
     // Delete matches
-    const matchesSnapshot = await getDocs(
+    const matchesSnapshot = await safeGetDocs(
       collection(db, "tournaments", tournamentId, "matches")
     );
     for (const matchDoc of matchesSnapshot.docs) {
-      await deleteDoc(matchDoc.ref);
+      await safeDeleteDoc(matchDoc.ref);
     }
 
     // Delete teams
-    const teamsSnapshot = await getDocs(
+    const teamsSnapshot = await safeGetDocs(
       collection(db, "tournaments", tournamentId, "teams")
     );
     for (const teamDoc of teamsSnapshot.docs) {
-      await deleteDoc(teamDoc.ref);
+      await safeDeleteDoc(teamDoc.ref);
     }
 
     // Delete tournament
-    await deleteDoc(doc(db, "tournaments", tournamentId));
+    await safeDeleteDoc(doc(db, "tournaments", tournamentId));
 
     alert("✅ Tournoi supprimé\n💾 ELO en backup pour annulation");
     loadTournaments();
@@ -438,36 +771,37 @@ window.deleteTournament = async function (tournamentId) {
 
 window.isSaving = false;
 
-window.saveMatch = async function () {
-
-  if (window.isSaving) return; // 🔥 bloque spam
+window.saveMatch = async function (event) {
+  if (window.isSaving) return;
   window.isSaving = true;
 
-  const btn = document.querySelector(".btn-add");
-  btn.disabled = true;
+  const btn = event?.target;
+  if (btn) btn.disabled = true;
 
   try {
+    const sb = parseInt(document.getElementById("sb")?.value);
+    const sr = parseInt(document.getElementById("sr")?.value);
 
-    const sb = parseInt(document.getElementById("sb").value);
-    const sr = parseInt(document.getElementById("sr").value);
+    const b1 = document.getElementById("b1")?.value;
+    const b2 = document.getElementById("b2")?.value;
+    const r1 = document.getElementById("r1")?.value;
+    const r2 = document.getElementById("r2")?.value;
 
-    const b1 = document.getElementById("b1").value;
-    const b2 = document.getElementById("b2").value;
-    const r1 = document.getElementById("r1").value;
-    const r2 = document.getElementById("r2").value;
+    // 🔒 VALIDATION MINIMALE
+    if (isNaN(sb) || isNaN(sr)) {
+      alert("Score invalide");
+      return;
+    }
 
-    if (isNaN(sb) || isNaN(sr))
-      return showScoreMessage("❌ Score invalide", "red");
+    if (sb === sr) {
+      alert("Match nul interdit");
+      return;
+    }
 
-    if (sb === sr)
-      return showScoreMessage("❌ Match nul interdit", "red");
-
-    const players = [b1, b2, r1, r2];
-    if (players.includes(""))
-      return showScoreMessage("❌ Choisis tous les joueurs", "red");
-
-    if (new Set(players).size !== 4)
-      return showScoreMessage("❌ Joueur en double", "red");
+    if (!b1 || !b2 || !r1 || !r2) {
+      alert("Tous les joueurs doivent être sélectionnés");
+      return;
+    }
 
     const match = {
       b1,
@@ -476,34 +810,43 @@ window.saveMatch = async function () {
       r2,
       sb,
       sr,
+      type: "classic",
       createdAt: serverTimestamp(),
       createdAtLocal: Date.now()
     };
 
-    if (isTest) {
-      showScoreMessage("🧪 Mode test activé", "red");
+    // 🧪 MODE TEST = ZERO FIREBASE
+    if (window.APP_MODE === "test") {
+      console.log("🧪 MATCH TEST (NON ENREGISTRÉ)", match);
+
+      const result = await updatePlayerStats(match);
+      console.log("RESULT TEST :", result);
+
+      showScoreMessage("🧪 Match simulé", "orange");
       return;
     }
 
-    await addDoc(collection(db, "matches"), match);
-    await updatePlayerStats(match);
-    await loadMatches();
+    // 🚀 MODE PROD = 1 SEUL ENREGISTREMENT
+    const matchRef = await safeAddDoc(collection(db, "matches"), match);
+
+    const result = await updatePlayerStats(match);
+
+    await safeUpdateDoc(matchRef, {
+      eloBefore: result.eloBefore,
+      eloAfter: result.eloAfter,
+      eloChange: result.eloChange,
+
+  played: true
+});
 
     showScoreMessage("✅ Match enregistré", "green");
 
-    // RESET
-    document.getElementById("sb").value = "";
-    document.getElementById("sr").value = "";
-
-    document.getElementById("b1").selectedIndex = 0;
-    document.getElementById("b2").selectedIndex = 0;
-    document.getElementById("r1").selectedIndex = 0;
-    document.getElementById("r2").selectedIndex = 0;
-
+  } catch (e) {
+    console.error("saveMatch error:", e);
+    alert("Erreur lors de l'enregistrement du match");
   } finally {
-    // 🔥 toujours exécuté même si erreur
     window.isSaving = false;
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
   }
 };
 
@@ -521,7 +864,7 @@ window.loadRanking = async function () {
   tbody.innerHTML = "";
   podium.innerHTML = "";
 
-  const snapshot = await getDocs(collection(db, "players"));
+  const snapshot = await safeGetDocs(collection(db, "players"));
 
   let players = [];
 
@@ -610,7 +953,14 @@ top3.forEach((p, i) => {
 // =========================
 async function updatePlayerStats(match) {
 
-  const snapshot = await getDocs(collection(db, "players"));
+  // 🔥 sécurité : ne jamais toucher tournoi
+  if (match.type === "tournament") {
+    console.log("🚫 Match tournoi ignoré ELO global");
+    return;
+  }
+
+  const snapshot = await safeGetDocs(collection(db, "players"));
+
   let joueurs = [];
 
   snapshot.forEach(d => {
@@ -621,10 +971,15 @@ async function updatePlayerStats(match) {
         ...p,
         id: d.id,
         oldElo: p.elo || 2000,
-        history: p.history || []
+        oldWins: p.wins || 0,
+        oldLosses: p.losses || 0,
+        oldHistory: [...(p.history || [])],
+        history: [...(p.history || [])]
       });
     }
   });
+
+  const blueWin = match.sb > match.sr;
 
   const teamBleu = joueurs.filter(j =>
     [match.b1, match.b2].includes(j.name)
@@ -634,11 +989,9 @@ async function updatePlayerStats(match) {
     [match.r1, match.r2].includes(j.name)
   );
 
-  // ✅ BOOLÉEN (IMPORTANT)
-  const blueWin = match.sb > match.sr;
-
-  // 🔧 ELO (si ta fonction attend 1/0)
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
+
+  let simulationResult = [];
 
   for (const j of joueurs) {
 
@@ -647,7 +1000,6 @@ async function updatePlayerStats(match) {
 
     const isBlue = [match.b1, match.b2].includes(j.name);
 
-    // ✅ logique claire
     const isWinner =
       (isBlue && blueWin) || (!isBlue && !blueWin);
 
@@ -659,74 +1011,144 @@ async function updatePlayerStats(match) {
       j.history.push("🔴");
     }
 
-    // 🔒 limite historique à 5
     if (j.history.length > 5) {
       j.history.shift();
     }
 
-    await updateDoc(doc(db, "players", j.id), {
+    simulationResult.push({
+      name: j.name,
+      oldElo: j.oldElo,
+      newElo: j.elo,
+      diff: j.elo - j.oldElo,
       wins,
       losses,
-      elo: j.elo,
-      lastDiff: Math.round(j.elo - j.oldElo),
       history: j.history
     });
+
+    // 🚨 IMPORTANT
+    if (!isTestMode()) {
+      await safeUpdateDoc(doc(db, "players", j.id), {
+        wins,
+        losses,
+        elo: j.elo,
+        lastDiff: Math.round(j.elo - j.oldElo),
+        history: j.history
+      });
+    }
   }
+
+  return {
+
+  // 🔥 AVANT MATCH
+  eloBefore: {
+    b1: Math.round(teamBleu[0]?.oldElo || 2000),
+    b2: Math.round(teamBleu[1]?.oldElo || 2000),
+    r1: Math.round(teamRouge[0]?.oldElo || 2000),
+    r2: Math.round(teamRouge[1]?.oldElo || 2000),
+  },
+
+  // 🔥 APRÈS MATCH
+  eloAfter: {
+    b1: Math.round(teamBleu[0]?.elo || 2000),
+    b2: Math.round(teamBleu[1]?.elo || 2000),
+    r1: Math.round(teamRouge[0]?.elo || 2000),
+    r2: Math.round(teamRouge[1]?.elo || 2000),
+  },
+
+  // 🔥 DIFF
+  eloChange: {
+    b1: Math.round((teamBleu[0]?.elo || 2000) - (teamBleu[0]?.oldElo || 2000)),
+    b2: Math.round((teamBleu[1]?.elo || 2000) - (teamBleu[1]?.oldElo || 2000)),
+    r1: Math.round((teamRouge[0]?.elo || 2000) - (teamRouge[0]?.oldElo || 2000)),
+    r2: Math.round((teamRouge[1]?.elo || 2000) - (teamRouge[1]?.oldElo || 2000)),
+  },
+
+  debug: simulationResult
+};
 }
 
 // =========================
 // 📜 MATCHES
 // =========================
+
 window.loadMatches = async function () {
+
   const list = document.getElementById("matchHistory");
   if (!list) return;
 
   list.innerHTML = "";
 
-  const selectedPlayer = document.getElementById("historyPlayerFilter")?.value?.toLowerCase() || "";
-  const resultFilter = document.getElementById("historyResultFilter")?.value || "";
+  const selectedPlayer =
+    document.getElementById("historyPlayerFilter")
+      ?.value
+      ?.toLowerCase() || "";
 
-  const q = query(collection(db, "matches"), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
+  if (!selectedPlayer) {
 
-  console.log("NB MATCHS:", snapshot.size);
+    list.innerHTML = `
+      <div style="
+        padding:20px;
+        text-align:center;
+        color:#64748b;
+        font-weight:bold;
+      ">
+        👤 Sélectionne un joueur pour afficher les matchs
+      </div>
+    `;
+    return;
+  }
+
+  const resultFilter =
+    document.getElementById("historyResultFilter")?.value || "";
+
+  const q = query(
+    collection(db, "matches"),
+    orderBy("createdAt", "desc")
+  );
+
+  const snapshot = await safeGetDocs(q);
 
   snapshot.forEach(d => {
+
     const m = d.data();
 
     const players = [m.b1, m.b2, m.r1, m.r2]
       .filter(p => p)
       .map(p => p.toLowerCase());
 
-    // 🔥 filtre joueur
-    if (selectedPlayer && !players.includes(selectedPlayer)) return;
+    if (!players.includes(selectedPlayer)) return;
 
-    // 🔥 déterminer victoire / défaite
     let isWin = false;
 
-    if (selectedPlayer) {
-      const inBlue = m.b1?.toLowerCase() === selectedPlayer || m.b2?.toLowerCase() === selectedPlayer;
-      const inRed = m.r1?.toLowerCase() === selectedPlayer || m.r2?.toLowerCase() === selectedPlayer;
+    const inBlue =
+      m.b1?.toLowerCase() === selectedPlayer ||
+      m.b2?.toLowerCase() === selectedPlayer;
 
-      if (inBlue) {
-        isWin = m.sb > m.sr;
-      } else if (inRed) {
-        isWin = m.sr > m.sb;
-      }
+    const inRed =
+      m.r1?.toLowerCase() === selectedPlayer ||
+      m.r2?.toLowerCase() === selectedPlayer;
+
+    if (inBlue) {
+      isWin = m.sb > m.sr;
+    } else if (inRed) {
+      isWin = m.sr > m.sb;
     }
 
-    // 🔥 filtre résultat
-    if (selectedPlayer) {
-       if (resultFilter === "win" && !isWin) return;
-       if (resultFilter === "loss" && isWin) return;
-}
+    if (resultFilter === "win" && !isWin) return;
+    if (resultFilter === "loss" && isWin) return;
 
     const li = document.createElement("li");
     li.classList.add("match-card");
+    li.style.minWidth = "260px";
+    li.style.maxWidth = "260px";
 
     const blueWin = m.sb > m.sr;
 
+    // =========================
+    // 📅 DATE
+    // =========================
     let date = "Date inconnue";
+
     if (m.createdAt?.seconds) {
       date = new Date(m.createdAt.seconds * 1000)
         .toLocaleDateString("fr-FR", {
@@ -734,6 +1156,7 @@ window.loadMatches = async function () {
           month: "2-digit",
           year: "2-digit"
         });
+
     } else if (m.createdAtLocal) {
       date = new Date(m.createdAtLocal)
         .toLocaleDateString("fr-FR", {
@@ -742,6 +1165,64 @@ window.loadMatches = async function () {
           year: "2-digit"
         });
     }
+
+    // =========================
+    // 💰 ELO INFO
+    // =========================
+    let eloInfo = "";
+
+    if (m.eloChange) {
+
+      eloInfo = `
+        <div style="
+          display:grid;
+          grid-template-columns: 1fr auto;
+          font-size:12px;
+          margin-top:6px;
+          padding:0 6px;
+          font-weight:bold;
+          row-gap:4px;
+        ">
+
+          <div style="color:#3b82f6;">
+            🔵 ${m.b1}-${m.b2}
+          </div>
+
+          <div style="color:#3b82f6; text-align:right;">
+            ${m.sb}
+          </div>
+
+          <div style="color:#3b82f6;">
+            ${m.eloChange.b1 > 0 ? "+" : ""}${m.eloChange.b1}
+            &nbsp;&nbsp;
+            ${m.eloChange.b2 > 0 ? "+" : ""}${m.eloChange.b2}
+          </div>
+
+          <div></div>
+
+          <div style="color:#ef4444; margin-top:6px;">
+            🔴 ${m.r1}-${m.r2}
+          </div>
+
+          <div style="color:#ef4444; text-align:right; margin-top:6px;">
+            ${m.sr}
+          </div>
+
+          <div style="color:#ef4444;">
+            ${m.eloChange.r1 > 0 ? "+" : ""}${m.eloChange.r1}
+            &nbsp;&nbsp;
+            ${m.eloChange.r2 > 0 ? "+" : ""}${m.eloChange.r2}
+          </div>
+
+          <div></div>
+
+        </div>
+      `;
+    }
+
+    // =========================
+    // 🖼 HTML MATCH
+    // =========================
 
     li.innerHTML = `
       <div class="match-row team-blue">
@@ -754,15 +1235,35 @@ window.loadMatches = async function () {
         <span class="score">${m.sr} ${!blueWin ? "🏆" : ""}</span>
       </div>
 
+      ${eloInfo}
+
       <div class="date">
         📅 ${date}
       </div>
+
+      ${window.isAdmin ? `
+        <button
+          onclick="deleteMatch('${d.id}')"
+          style="
+            margin-top:10px;
+            background:#dc2626;
+            color:white;
+            border:none;
+            padding:8px 12px;
+            border-radius:8px;
+            cursor:pointer;
+            width:100%;
+            font-weight:bold;
+          "
+        >
+          🗑 Supprimer
+        </button>
+      ` : ""}
     `;
 
     list.appendChild(li);
   });
 };
-
 
 // =========================
 // 📜 FILTER
@@ -773,7 +1274,7 @@ window.loadPlayersFilter = async function () {
 
   select.innerHTML = "<option value=''>-- Choisir joueur --</option>";
 
-  const snapshot = await getDocs(collection(db, "players"));
+  const snapshot = await safeGetDocs(collection(db, "players"));
 
   snapshot.forEach(doc => {
     const p = doc.data();
@@ -781,6 +1282,18 @@ window.loadPlayersFilter = async function () {
     option.value = p.name;
     option.textContent = p.name;
     select.appendChild(option);
+  });
+
+  // 🔥 SYNCHRONISER AVEC LA TENDANCE
+  select.addEventListener("change", function() {
+    const trendSelect = document.getElementById("trendPlayerFilter");
+    if (trendSelect) {
+      trendSelect.value = this.value;
+      // Déclenche la mise à jour du graphique
+      if (typeof loadPlayerEloTrend === "function") {
+        loadPlayerEloTrend();
+      }
+    }
   });
 };
 
@@ -793,7 +1306,7 @@ window.loadComments = async function () {
 
   list.innerHTML = "";
 
-  const snapshot = await getDocs(collection(db, "comments"));
+  const snapshot = await safeGetDocs(collection(db, "comments"));
 
   snapshot.forEach((d) => {
     const c = d.data();
@@ -841,7 +1354,11 @@ window.openTournament = async function (tournamentId) {
   window.currentTournamentId = tournamentId;
   openModal("tournament");
   // Montre le menu des onglets pour les tournois existants
-  document.querySelector(".tournament-menu").style.display = "block";
+  const menu = document.querySelector(".tournament-menu");
+
+if (menu) {
+  menu.style.display = "block";
+}
   openTournamentTab("matches");
   await loadTournamentMatches(tournamentId);
   await loadTournamentRanking(tournamentId);
@@ -850,7 +1367,11 @@ window.openTournament = async function (tournamentId) {
 window.openTournamentMatches = async function (tournamentId) {
   window.currentTournamentId = tournamentId;
   openModal("tournament");
-  document.querySelector(".tournament-menu").style.display = "block";
+  const menu = document.querySelector(".tournament-menu");
+
+if (menu) {
+  menu.style.display = "block";
+}
   openTournamentTab("matches");
   await loadTournamentMatches(tournamentId);
   await loadTournamentRanking(tournamentId);
@@ -859,7 +1380,11 @@ window.openTournamentMatches = async function (tournamentId) {
 window.openTournamentRankingView = async function (tournamentId) {
   window.currentTournamentId = tournamentId;
   openModal("tournament");
-  document.querySelector(".tournament-menu").style.display = "block";
+  const menu = document.querySelector(".tournament-menu");
+
+if (menu) {
+  menu.style.display = "block";
+}
   openTournamentTab("ranking");
   await loadTournamentRanking(tournamentId);
 };
@@ -874,201 +1399,243 @@ window.getTimestampDate = function (value) {
 
 window.lastTournamentCreation = 0;
 
+// =========================
+// 🎛️ UPDATE TEAM MODE UI
+// =========================
+window.updateTeamModeUI = function() {
+  const teamMode = document.getElementById("teamMode").value;
+  const manualSection = document.getElementById("manualTeamSection");
+  
+  if (teamMode === "manual") {
+    manualSection.style.display = "block";
+    window.manualTeamCount = 0;
+    document.getElementById("manualTeamContainer").innerHTML = "";
+    
+    // Ajouter 2 équipes par défaut
+    addManualTeam();
+    addManualTeam();
+    
+    loadPlayersSelect();
+  } else {
+    manualSection.style.display = "none";
+  }
+};
+
+// =========================
+// ➕ AJOUTER UNE ÉQUIPE MANUELLE
+// =========================
+window.addManualTeam = function() {
+  if (!window.manualTeamCount) {
+    window.manualTeamCount = 0;
+  }
+  
+  window.manualTeamCount++;
+  const teamId = window.manualTeamCount;
+  
+  const container = document.getElementById("manualTeamContainer");
+  
+  const teamDiv = document.createElement("div");
+  teamDiv.id = `team-${teamId}`;
+  teamDiv.style.marginBottom = "20px";
+  teamDiv.style.padding = "15px";
+  teamDiv.style.border = "1px solid #cbd5e1";
+  teamDiv.style.borderRadius = "8px";
+  teamDiv.style.backgroundColor = "rgba(255,255,255,0.5)";
+  
+  let removeBtn = "";
+  if (window.manualTeamCount > 2) {
+    removeBtn = `<button type="button" onclick="removeManualTeam(${teamId})" class="btn-danger" style="margin-top: 10px; width: 100%; max-width: 150px;">Supprimer</button>`;
+  }
+  
+  teamDiv.innerHTML = `
+    <h5 style="margin-top: 0; color: #1e293b;">⚽ Équipe ${teamId}</h5>
+    
+    <label style="display: block; margin-bottom: 5px;">Nom personnalisé</label>
+    <input 
+      id="teamName-${teamId}" 
+      type="text" 
+      placeholder="Ex: Les Invincibles"
+    >
+    
+    <label style="display: block; margin-top: 10px; margin-bottom: 5px;">Joueur 1</label>
+    <select id="teamPlayer1-${teamId}"></select>
+    
+    <label style="display: block; margin-top: 10px; margin-bottom: 5px;">Joueur 2</label>
+    <select id="teamPlayer2-${teamId}"></select>
+    
+    ${removeBtn}
+  `;
+  
+  container.appendChild(teamDiv);
+  
+  // Remplir les sélecteurs avec les joueurs
+  loadPlayersForTeam(teamId);
+};
+
+// =========================
+// ➖ SUPPRIMER UNE ÉQUIPE MANUELLE
+// =========================
+window.removeManualTeam = function(teamId) {
+  const teamDiv = document.getElementById(`team-${teamId}`);
+  if (teamDiv) {
+    teamDiv.remove();
+  }
+};
+
+// =========================
+// 🎯 CHARGER JOUEURS POUR UNE ÉQUIPE
+// =========================
+window.loadPlayersForTeam = async function(teamId) {
+  const snapshot = await safeGetDocs(collection(db, "players"));
+  const select1 = document.getElementById(`teamPlayer1-${teamId}`);
+  const select2 = document.getElementById(`teamPlayer2-${teamId}`);
+  
+  if (!select1 || !select2) return;
+  
+  select1.innerHTML = "<option value=''>-- choisir --</option>";
+  select2.innerHTML = "<option value=''>-- choisir --</option>";
+  
+  snapshot.forEach(doc => {
+    const p = doc.data();
+    
+    // Ajouter à select1
+    const option1 = document.createElement("option");
+    option1.value = p.name;
+    option1.textContent = p.name;
+    select1.appendChild(option1);
+    
+    // Ajouter à select2
+    const option2 = document.createElement("option");
+    option2.value = p.name;
+    option2.textContent = p.name;
+    select2.appendChild(option2);
+  });
+};
+
 window.createTournament = async function () {
 
-  const name =
-    document.getElementById(
-      "tournamentName"
-    ).value.trim();
+  try {
+    const name = document.getElementById("tournamentName")?.value?.trim();
+    const mode = document.getElementById("tournamentMode")?.value;
+    const doubleRound = document.getElementById("doubleRound")?.checked;
+    const winPoints = parseInt(document.getElementById("winPoints")?.value || 3);
+    const lossPoints = parseInt(document.getElementById("lossPoints")?.value || 0);
+    const offBonus = parseInt(document.getElementById("offBonus")?.value || 1);
+    const defBonus = parseInt(document.getElementById("defBonus")?.value || 1);
 
-  const mode =
-    document.getElementById(
-      "teamMode"
-    ).value;
-
-  const doubleRound =
-    document.getElementById(
-      "doubleRound"
-    ).checked;
-
-  const winPoints =
-    parseInt(
-      document.getElementById(
-        "winPoints"
-      ).value
-    ) || 3;
-
-  const lossPoints =
-    parseInt(
-      document.getElementById(
-        "lossPoints"
-      ).value
-    ) || 0;
-
-  const offBonus =
-    parseInt(
-      document.getElementById(
-        "offBonus"
-      ).value
-    ) || 1;
-
-  const defBonus =
-    parseInt(
-      document.getElementById(
-        "defBonus"
-      ).value
-    ) || 1;
-
-  // =========================
-  // 🔒 NOM OBLIGATOIRE
-  // =========================
-
-  if (!name) {
-
-    alert(
-      "Nom du tournoi obligatoire"
-    );
-
-    return;
-
-  }
-
-  // =========================
-  // 🔒 NOM UNIQUE
-  // =========================
-
-  const existingTournament =
-    await getDocs(
-      collection(db, "tournaments")
-    );
-
-  let alreadyExists = false;
-
-  existingTournament.forEach(doc => {
-
-    const t = doc.data();
-
-    if (
-      t.name.toLowerCase() ===
-      name.toLowerCase()
-    ) {
-
-      alreadyExists = true;
-
+    if (!name) {
+      alert("Nom du tournoi obligatoire");
+      return;
     }
 
-  });
-
-  if (alreadyExists) {
-
-    alert(
-      "Un tournoi porte déjà ce nom"
+    // =========================
+    // 🏆 CREATE TOURNAMENT
+    // =========================
+    const tournamentRef = await safeAddDoc(
+      collection(db, "tournaments"),
+      {
+        name,
+        mode,
+        doubleRound,
+        winPoints,
+        lossPoints,
+        offBonus,
+        defBonus,
+        createdAt: serverTimestamp(),
+        status: "waiting"
+      }
     );
 
-    return;
+    let manualTeamsData = null;
 
-  }
+    // =========================
+    // 👥 MODE MANUAL
+    // =========================
+    if (mode === "manual") {
 
-  // =========================
-  // ⏳ ANTI SPAM
-  // =========================
+      manualTeamsData = [];
+      const teamDivs = document.querySelectorAll("#manualTeamContainer > div");
+      const usedPlayers = new Set();
 
-  const now = Date.now();
+      teamDivs.forEach((teamDiv, index) => {
 
-  if (
-    now - window.lastTournamentCreation
-    < 5000
-  ) {
+        const realId = teamDiv.id.replace("team-", "");
 
-    alert(
-      "Attends 5 secondes avant de recréer un tournoi"
-    );
+        const nameInput = document.getElementById(`teamName-${realId}`);
+        const player1Select = document.getElementById(`teamPlayer1-${realId}`);
+        const player2Select = document.getElementById(`teamPlayer2-${realId}`);
 
-    return;
+        const teamName = nameInput?.value?.trim() || `Équipe ${index + 1}`;
+        const player1 = player1Select?.value;
+        const player2 = player2Select?.value;
 
-  }
-
-  window.lastTournamentCreation = now;
-
-  // =========================
-  // 🚀 CREATE
-  // =========================
-
-  try {
-
-    const tournamentRef =
-      await addDoc(
-        collection(db, "tournaments"),
-        {
-          name,
-          mode,
-          doubleRound,
-          winPoints,
-          lossPoints,
-          offBonus,
-          defBonus,
-          createdAt: serverTimestamp(),
-          status: "waiting"
+        if (!player1 || !player2) {
+          throw new Error("Missing player");
         }
-      );
 
-    // équipes
+        if (player1 === player2) {
+          throw new Error("Same players");
+        }
+
+        if (usedPlayers.has(player1) || usedPlayers.has(player2)) {
+          throw new Error("Duplicate player");
+        }
+
+        usedPlayers.add(player1);
+        usedPlayers.add(player2);
+
+        manualTeamsData.push({
+          teamName,
+          player1,
+          player2
+        });
+      });
+
+      if (manualTeamsData.length < 2) {
+        alert("Au moins 2 équipes nécessaires");
+        return;
+      }
+    }
+
+    // =========================
+    // ⚙️ GENERATION
+    // =========================
     await generateTeams(
       tournamentRef.id,
-      mode
+      mode,
+      manualTeamsData
     );
 
-    // matchs
     await generateMatches(
       tournamentRef.id,
       doubleRound
     );
 
-    // tournoi actuel
-    window.currentTournamentId =
-      tournamentRef.id;
+    // =========================
+    // 🔁 REFRESH UI
+    // =========================
+    window.currentTournamentId = tournamentRef.id;
 
-    // refresh
-    await loadTournamentMatches(
-      tournamentRef.id
-    );
-
-    await loadTournamentRanking(
-      tournamentRef.id
-    );
-
+    await loadTournamentMatches(tournamentRef.id);
+    await loadTournamentRanking(tournamentRef.id);
     await loadTournaments();
 
-    console.log(
-      "🏆 Tournoi créé :",
-      tournamentRef.id
-    );
+    alert("🏆 Tournoi créé avec succès");
 
-    alert(
-      "🏆 Tournoi créé avec succès"
-    );
-
-    // reset form
-    document.getElementById(
-      "tournamentName"
-    ).value = "";
+    const input = document.getElementById("tournamentName");
+    if (input) input.value = "";
 
   } catch (e) {
-
-    console.error(e);
-
-    alert(
-      "Erreur création tournoi"
-    );
-
+    console.error("createTournament error:", e);
+    alert("Erreur création tournoi");
   }
-
 };
 
-window.generateTeams = async function (tournamentId,  mode) {
+
+window.generateTeams = async function (tournamentId, mode, manualTeamsData) {
 
   const snapshot =
-    await getDocs(collection(db, "players"));
+    await safeGetDocs(collection(db, "players"));
 
   let players = [];
 
@@ -1080,6 +1647,39 @@ window.generateTeams = async function (tournamentId,  mode) {
     });
 
   });
+
+  // =========================
+  // 👥 CRÉATION ÉQUIPES MANUELLES
+  // =========================
+
+  if (mode === "manual" && manualTeamsData && Array.isArray(manualTeamsData)) {
+    
+    let teams = manualTeamsData.map(team => ({
+      player1: team.player1,
+      player2: team.player2 || "",
+      teamName: team.teamName,
+      points: 0,
+      wins: 0,
+      losses: 0,
+      goalsFor: 0,
+      goalsAgainst: 0,
+      createdAt: serverTimestamp()
+    }));
+
+    for (const team of teams) {
+      await safeAddDoc(
+        collection(
+          db,
+          "tournaments",
+          tournamentId,
+          "teams"
+        ),
+        team
+      );
+    }
+
+    return;
+  }
 
   // minimum 4 joueurs
   if (players.length < 4) {
@@ -1093,9 +1693,12 @@ window.generateTeams = async function (tournamentId,  mode) {
 
   if (mode === "random") {
 
-    players.sort(() => Math.random() - 0.5);
-
+  for (let i = players.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [players[i], players[j]] = [players[j], players[i]];
   }
+
+}
 
   // =========================
   // ⚖️ MODE ELO
@@ -1136,6 +1739,7 @@ window.generateTeams = async function (tournamentId,  mode) {
     teams.push({
       player1: players[i].name,
       player2: players[i + 1].name,
+      teamName: `${players[i].name} & ${players[i + 1].name}`,
       points: 0,
       wins: 0,
       losses: 0,
@@ -1152,7 +1756,7 @@ window.generateTeams = async function (tournamentId,  mode) {
 
   for (const team of teams) {
 
-    await addDoc(
+    await safeAddDoc(
       collection(
         db,
         "tournaments",
@@ -1181,7 +1785,7 @@ window.loadTournaments = async function () {
     if (c) c.innerHTML = "";
   });
 
-  const snapshot = await getDocs(
+  const snapshot = await safeGetDocs(
     collection(db, "tournaments")
   );
 
@@ -1274,7 +1878,7 @@ window.generateMatches = async function (
 ) {
 
   // récupère équipes
-  const snapshot = await getDocs(
+  const snapshot = await safeGetDocs(
     collection(
       db,
       "tournaments",
@@ -1349,7 +1953,7 @@ redTeamName:
 
   for (const match of matches) {
 
-    await addDoc(
+    await safeAddDoc(
       collection(
         db,
         "tournaments",
@@ -1378,7 +1982,7 @@ window.loadTournamentMatches = async function (
 
   container.innerHTML = "";
 
-  const snapshot = await getDocs(
+  const snapshot = await safeGetDocs(
     collection(
       db,
       "tournaments",
@@ -1411,21 +2015,35 @@ window.loadTournamentMatches = async function (
     div.classList.add("match-card");
 
     const blue = match.blueTeam
-      ? `${match.blueTeam.player1}/${match.blueTeam.player2}`
+      ? `${match.blueTeam.teamName || `${match.blueTeam.player1}/${match.blueTeam.player2}`}`
       : match.blueTeamName;
 
     const red = match.redTeam
-      ? `${match.redTeam.player1}/${match.redTeam.player2}`
+      ? `${match.redTeam.teamName || `${match.redTeam.player1}/${match.redTeam.player2}`}`
       : match.redTeamName;
+
+    const bluePlayers = match.blueTeam
+      ? `${match.blueTeam.player1} / ${match.blueTeam.player2}`
+      : "";
+
+    const redPlayers = match.redTeam
+      ? `${match.redTeam.player1} / ${match.redTeam.player2}`
+      : "";
 
     div.innerHTML = `
 
       <div class="match-row team-blue">
-        🔵 ${blue}
+        <div>
+          🔵 <strong>${blue}</strong><br/>
+          <small style="color: #666;">${bluePlayers}</small>
+        </div>
       </div>
 
       <div class="match-row team-red">
-        🔴 ${red}
+        <div>
+          🔴 <strong>${red}</strong><br/>
+          <small style="color: #666;">${redPlayers}</small>
+        </div>
       </div>
 
       <div class="score-box">
@@ -1585,12 +2203,13 @@ window.saveTournamentMatch = async function (
   // 💾 SAVE MATCH
   // =========================
 
-  await updateDoc(
+  await safeUpdateDoc(
     matchRef,
     {
       sb,
       sr,
-      played: true
+      played: true,
+      type: "tournament"
     }
   );
 
@@ -1605,7 +2224,7 @@ window.saveTournamentMatch = async function (
       ...existingMatch,
       sb,
       sr
-    }
+    }   
   );
 
   // refresh liste matchs
@@ -1622,6 +2241,12 @@ window.updateTournamentRanking = async function (
   match
 ) {
 
+  // 🚫 sécurité : ne traiter que les matchs tournoi
+  if (match.type === "classic") {
+    console.log("🚫 Match classique ignoré dans tournoi");
+    return;
+  }
+
   // =========================
   // RÉCUP TOURNOI
   // =========================
@@ -1630,58 +2255,48 @@ window.updateTournamentRanking = async function (
     doc(db, "tournaments", tournamentId)
   );
 
-  const tournament =
-    tournamentDoc.data();
+  const tournament = tournamentDoc.data();
+
+  if (!tournament) {
+    console.error("Tournoi introuvable");
+    return;
+  }
 
   // paramètres
-  const winPoints =
-    tournament.winPoints || 3;
-
-  const lossPoints =
-    tournament.lossPoints || 0;
-
-  const offBonus =
-    tournament.offBonus || 1;
-
-  const defBonus =
-    tournament.defBonus || 1;
+  const winPoints = tournament.winPoints || 3;
+  const lossPoints = tournament.lossPoints || 0;
+  const offBonus = tournament.offBonus || 1;
+  const defBonus = tournament.defBonus || 1;
 
   // =========================
   // RÉCUP ÉQUIPES
   // =========================
 
-  const teamsSnapshot = await getDocs(
-    collection(
-      db,
-      "tournaments",
-      tournamentId,
-      "teams"
-    )
+  const teamsSnapshot = await safeGetDocs(
+    collection(db, "tournaments", tournamentId, "teams")
   );
 
   let teams = [];
 
   teamsSnapshot.forEach(docSnap => {
-
     teams.push({
       id: docSnap.id,
       ref: docSnap.ref,
       ...docSnap.data()
     });
-
   });
 
   // =========================
   // TROUVER LES 2 ÉQUIPES
   // =========================
 
- const blueTeam = teams.find(
-  team => team.id === match.blueTeamId
-);
+  const blueTeam = teams.find(
+    team => team.id === match.blueTeamId
+  );
 
-const redTeam = teams.find(
-  team => team.id === match.redTeamId
-);
+  const redTeam = teams.find(
+    team => team.id === match.redTeamId
+  );
 
   if (!blueTeam || !redTeam) {
     console.error("Équipes introuvables");
@@ -1697,42 +2312,29 @@ const redTeam = teams.find(
 
   // victoire
   if (match.sb > match.sr) {
-
     bluePoints += winPoints;
     redPoints += lossPoints;
 
     blueTeam.wins++;
     redTeam.losses++;
-
   } else {
-
     redPoints += winPoints;
     bluePoints += lossPoints;
 
     redTeam.wins++;
     blueTeam.losses++;
-
   }
 
   // bonus offensif
-  if (match.sb >= 10)
-    bluePoints += offBonus;
-
-  if (match.sr >= 10)
-    redPoints += offBonus;
+  if (match.sb >= 10) bluePoints += offBonus;
+  if (match.sr >= 10) redPoints += offBonus;
 
   // bonus défensif
-  if (
-    match.sb < match.sr &&
-    match.sb >= 9
-  ) {
+  if (match.sb < match.sr && match.sb >= 9) {
     bluePoints += defBonus;
   }
 
-  if (
-    match.sr < match.sb &&
-    match.sr >= 9
-  ) {
+  if (match.sr < match.sb && match.sr >= 9) {
     redPoints += defBonus;
   }
 
@@ -1753,7 +2355,7 @@ const redTeam = teams.find(
   // SAVE
   // =========================
 
-  await updateDoc(
+  await safeUpdateDoc(
     blueTeam.ref,
     {
       points: blueTeam.points,
@@ -1764,7 +2366,7 @@ const redTeam = teams.find(
     }
   );
 
-  await updateDoc(
+  await safeUpdateDoc(
     redTeam.ref,
     {
       points: redTeam.points,
@@ -1775,15 +2377,13 @@ const redTeam = teams.find(
     }
   );
 
-  // refresh tableau
-  await loadTournamentRanking(
-    tournamentId
-  );
+  // =========================
+  // REFRESH UI
+  // =========================
 
+  await loadTournamentRanking(tournamentId);
   await checkTournamentFinished(tournamentId);
-
 };
-
 window.loadTournamentRanking = async function (
   tournamentId
 ) {
@@ -1801,7 +2401,7 @@ window.loadTournamentRanking = async function (
   // RÉCUP ÉQUIPES
   // =========================
 
-  const snapshot = await getDocs(
+  const snapshot = await safeGetDocs(
     collection(
       db,
       "tournaments",
@@ -1864,10 +2464,12 @@ if (winnerBox && teams.length > 0) {
       🏆 Champion du tournoi
 
       <h2>
-        ${winner.player1}
-        /
-        ${winner.player2}
+        ${winner.teamName || `${winner.player1} / ${winner.player2}`}
       </h2>
+
+      <p style="font-size: 13px;">
+        ${winner.player1} / ${winner.player2}
+      </p>
 
       <p>
         ${winner.points} pts
@@ -1895,9 +2497,8 @@ if (winnerBox && teams.length > 0) {
       <td>${index + 1}</td>
 
       <td>
-        ${team.player1}
-        /
-        ${team.player2}
+        <strong>${team.teamName || "Équipe"}</strong><br/>
+        <small style="color: #666;">${team.player1} / ${team.player2}</small>
       </td>
 
       <td>${team.points}</td>
@@ -1924,7 +2525,7 @@ if (winnerBox && teams.length > 0) {
 };
 
 window.storeTournamentWinner = async function (tournamentId) {
-  const snapshot = await getDocs(
+  const snapshot = await safeGetDocs(
     collection(db, "tournaments", tournamentId, "teams")
   );
 
@@ -1949,7 +2550,7 @@ window.storeTournamentWinner = async function (tournamentId) {
   const winner = teams[0];
   const winnerName = `${winner.player1}/${winner.player2}`;
 
-  await updateDoc(doc(db, "tournaments", tournamentId), {
+  await safeUpdateDoc(doc(db, "tournaments", tournamentId), {
     winnerName
   });
 
@@ -1961,7 +2562,7 @@ window.checkTournamentFinished = async function (
 ) {
 
   // récup matchs
-  const snapshot = await getDocs(
+  const snapshot = await safeGetDocs(
     collection(
       db,
       "tournaments",
@@ -1992,7 +2593,7 @@ window.checkTournamentFinished = async function (
       tournamentId
     );
 
-    await updateDoc(
+    await safeUpdateDoc(
       doc(
         db,
         "tournaments",
@@ -2021,15 +2622,170 @@ window.checkTournamentFinished = async function (
 };
 
 // =========================
-// 🚀 INIT
+// � TENDANCE ELO
+// =========================
+
+// 🔥 Charger les joueurs dans le select Tendance
+window.loadPlayersTrendFilter = async function () {
+
+  const select1 = document.getElementById("trendPlayerFilter");
+  const select2 = document.getElementById("trendPlayerFilter2");
+
+  if (!select1 || !select2) return;
+
+  select1.innerHTML = "<option value=''>-- Joueur 1 --</option>";
+  select2.innerHTML = "<option value=''>-- Joueur 2 (optionnel) --</option>";
+
+  const snapshot = await safeGetDocs(collection(db, "players"));
+
+  snapshot.forEach(doc => {
+    const p = doc.data();
+
+    const option1 = document.createElement("option");
+    option1.value = p.name;
+    option1.textContent = p.name;
+
+    const option2 = document.createElement("option");
+    option2.value = p.name;
+    option2.textContent = p.name;
+
+    select1.appendChild(option1);
+    select2.appendChild(option2);
+  });
+};
+
+// 🔥 Charger l'historique ELO d'un joueur et afficher le graphique
+window.loadPlayerEloTrend = async function () {
+
+  const p1 = document.getElementById("trendPlayerFilter")?.value?.toLowerCase();
+  const p2 = document.getElementById("trendPlayerFilter2")?.value?.toLowerCase();
+
+  if (!p1 && !p2) return;
+
+  const q = query(collection(db, "matches"), orderBy("createdAt", "asc"));
+  const snapshot = await safeGetDocs(q);
+
+  let elo1 = 2000;
+  let elo2 = 2000;
+
+  const history1 = [];
+  const history2 = [];
+  const labels = [];
+
+  let step = 0;
+
+  snapshot.forEach(d => {
+    const m = d.data();
+
+    // ignorer match non joué
+    if (!m.played && m.sb == null) return;
+
+    const b1 = m.b1?.toLowerCase();
+    const b2 = m.b2?.toLowerCase();
+    const r1 = m.r1?.toLowerCase();
+    const r2 = m.r2?.toLowerCase();
+
+    const blueWin = m.sb > m.sr;
+    const redWin = m.sr > m.sb;
+
+    let changed = false;
+
+    // =========================
+    // JOUEUR 1
+    // =========================
+    if (p1 && (b1 === p1 || b2 === p1 || r1 === p1 || r2 === p1)) {
+
+      const isBlue = (b1 === p1 || b2 === p1);
+
+      const change = isBlue
+        ? (blueWin ? 1 : -1)
+        : (redWin ? 1 : -1);
+
+      elo1 += change;
+      history1.push(elo1);
+
+      changed = true;
+    }
+
+    // =========================
+    // JOUEUR 2
+    // =========================
+    if (p2 && (b1 === p2 || b2 === p2 || r1 === p2 || r2 === p2)) {
+
+      const isBlue = (b1 === p2 || b2 === p2);
+
+      const change = isBlue
+        ? (blueWin ? 1 : -1)
+        : (redWin ? 1 : -1);
+
+      elo2 += change;
+      history2.push(elo2);
+
+      changed = true;
+    }
+
+    // 🔥 on n’ajoute un label QUE si match utile
+    if (changed) {
+      step++;
+      labels.push(`M${step}`);
+    }
+  });
+
+  const ctx = document.getElementById("eloChart")?.getContext("2d");
+  if (!ctx) return;
+
+  if (window.eloChartInstance) {
+    window.eloChartInstance.destroy();
+  }
+
+  const datasets = [];
+
+  if (p1) {
+    datasets.push({
+      label: p1,
+      data: history1,
+      borderColor: "#3b82f6",
+      backgroundColor: "rgba(59,130,246,0.15)",
+      tension: 0.35,
+      pointRadius: 3,
+      fill: true
+    });
+  }
+
+  if (p2) {
+    datasets.push({
+      label: p2,
+      data: history2,
+      borderColor: "#ef4444",
+      backgroundColor: "rgba(239,68,68,0.15)",
+      tension: 0.35,
+      pointRadius: 3,
+      fill: true
+    });
+  }
+
+  window.eloChartInstance = new Chart(ctx, {
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true }
+      }
+    }
+  });
+};
+// =========================
+// �🚀 INIT
 // =========================
 document.addEventListener("DOMContentLoaded", () => {
 
   // 🔥 MODE TEST VISUEL
-  if (isTest) {
+  if (window.APP_MODE === "test") {
     document.body.style.border = "5px solid red";
   }
-  if (isTest) {
+  if (window.APP_MODE === "test") {
   console.log("🧪 MODE TEST ACTIVÉ");
 } else {
   console.log("🚀 MODE PROD ACTIVÉ");
@@ -2038,5 +2794,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadMatches();
   loadComments();
   loadPlayersSelect();
+  loadPlayersFilter();
+  loadPlayersTrendFilter();
   loadTournaments();
 });

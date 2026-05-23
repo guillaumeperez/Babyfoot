@@ -214,18 +214,6 @@ button img {
   overflow-y: auto;
 }
 
-.no-scroll {
-  position: fixed;
-  width: 100%;
-  overflow: hidden;
-}
-
-.error-message {
-  color: #dc2626;
-  margin: 6px 0 0;
-  font-size: 14px;
-}
-
 /* =========================
    🧾 HEADER / LOGO
 ========================= */
@@ -310,30 +298,30 @@ button img {
 }
 
 /* =========================
-   🏆 PODIUM
+   🏆 PODIUM (VERSION COMPACTE)
 ========================= */
 
 #podium {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .podium-box {
-  width: 100px;
+  width: 75px;
   text-align: center;
   border-radius: 10px;
-  padding: 10px;
+  padding: 6px;
   font-weight: bold;
-  color: #000;
+  font-size: 12px;
 }
 
-.podium-1 { background: gold; height: 140px; order: 2; }
-.podium-2 { background: silver; height: 110px; order: 1; }
-.podium-3 { background: #cd7f32; height: 90px; order: 3; }
-
+/* hauteurs réduites */
+.podium-1 { background: gold; height: 90px; order: 2; }
+.podium-2 { background: silver; height: 70px; order: 1; }
+.podium-3 { background: #cd7f32; height: 60px; order: 3; }
 /* =========================
    ⚽ SCORE
 ========================= */
@@ -768,6 +756,20 @@ Tournoi
   text-align: left;
   padding-left: 12px;
   font-weight: normal;
+  box-sizing: border-box;
+}
+
+#manualTeamContainer input[type="text"],
+#manualTeamContainer select {
+  width: calc(100% - 20px);
+  max-width: 260px;
+  height: 40px;
+  font-size: 14px;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-sizing: border-box;
+  margin-bottom: 8px;
 }
 
 .points-label {
@@ -956,12 +958,16 @@ Tournoi
   margin-top: 8px;
   margin-left: 0;
   margin-right: 0;
+  min-width: 260px;
+  max-width: 260px;
+  box-sizing: border-box;
 }
 
 #history .score {
-  width: 30px;
-  font-size: 11px;
+  width: 36px;
+  font-size: 13px;
   color: #000;
+  text-align: center;
 }
 
 #history .date {
@@ -972,7 +978,8 @@ Tournoi
 }
 
 #history li.match-card {
-  max-width: 220px;
+  max-width: 260px;
+  min-width: 260px;
   margin: 8px auto;
 }
 
@@ -1242,4 +1249,84 @@ Tournoi
 
 .score-box button:hover{
   transform:scale(1.03);
+}
+
+/* =========================
+📜 HISTORIQUE + GRAPHIQUE
+========================= */
+
+.history-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* zone historique */
+
+.history-top {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+/* zone graphique */
+
+.history-bottom {
+  background: rgba(255,255,255,0.75);
+  border-radius: 16px;
+  padding: 15px;
+}
+
+/* graphique */
+
+#eloChart {
+  max-height: 300px;
+}
+
+/* mobile */
+
+@media (max-width: 768px) {
+
+  .history-top {
+    max-height: 250px;
+  }
+
+  #eloChart {
+    max-height: 220px;
+  }
+
+}
+
+.history-box {
+  display: flex;
+  flex-direction: column;
+}
+
+/* zone scroll uniquement */
+.history-layout {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* top scroll */
+.history-top {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+/* bouton toujours en bas */
+.history-box .actions {
+  margin-top: 15px;
+}
+
+/* =========================
+   🔴 BOUTON FERMER (FIX COULEUR)
+========================= */
+
+.btn-danger {
+  color: #000 !important;
+}
+
+.btn-danger:hover {
+  color: #fff !important;
 }

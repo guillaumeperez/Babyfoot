@@ -7,6 +7,7 @@
   <title>Baby-foot AGAP</title>
 
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -17,12 +18,27 @@
     <img src="img/logo2.png" alt="Logo Babyfoot" class="logo">
   </div>
 
+<div id="adminBadge" style="
+  display:none;
+  position:fixed;
+  top:10px;
+  right:10px;
+  background:#dc2626;
+  color:white;
+  padding:6px 12px;
+  border-radius:20px;
+  font-weight:bold;
+  font-size:12px;
+  z-index:9999;
+">
+  ⚙️ MODE ADMIN
+</div>
+  
  <!-- =========================
 💬 Informations
 ========================= -->
 <div class="beta-box">
-  ⚠️ Version bêta - Désolé pour les bugs<br>
-  La nouvelle fonctionnalité est arrivée : Tournoi !<br>
+  ⚠️ News : graphique + elo gain/perte dans l'historique !<br>
 </div>
 
   <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -196,7 +212,7 @@ CREATE TOURNAMENT
 
   <label>Création des équipes</label>
 
-  <select id="teamMode">
+  <select id="teamMode" onchange="updateTeamModeUI()">
     <option value="random">
       🔀 Aléatoire
     </option>
@@ -204,7 +220,25 @@ CREATE TOURNAMENT
     <option value="elo">
       ⚖️ Équilibré ELO
     </option>
+
+    <option value="manual">
+      ✋ Manuel
+    </option>
   </select>
+
+  <!-- SECTION CRÉATION MANUELLE (cachée par défaut) -->
+  <div id="manualTeamSection" style="display: none; margin-top: 20px; border: 2px solid #3b82f6; padding: 15px; border-radius: 10px;">
+    <h4>👥 Créer vos équipes</h4>
+
+    <!-- CONTENEUR ÉQUIPES DYNAMIQUE -->
+    <div id="manualTeamContainer"></div>
+
+    <!-- BOUTON AJOUTER ÉQUIPE -->
+    <button type="button" onclick="addManualTeam()" class="btn-add" style="margin-top: 15px;">
+      <img src="img/save.png" alt="">
+      Ajouter une équipe
+    </button>
+  </div>
 
   <div class="checkbox-line">
 
@@ -346,11 +380,43 @@ CREATE TOURNAMENT
 
 
 <!-- =========================
-Ajout de joueur
+          Admin
 ========================= -->
 <div id="adminPanel" style="display:none;">
-  <h3>📩 Demandes en attente</h3>
+
+  <h3>⚙️ Administration</h3>
+
+  <h4>📩 Demandes en attente</h4>
   <div id="listeDemandes"></div>
+
+  <hr>
+
+  <h4>🧨 Reset base de données</h4>
+
+  <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+
+    <button onclick="resetAllMatches()">
+      🗑 Reset Matchs
+    </button>
+
+    <button onclick="resetAllTournaments()">
+      🏆 Reset Tournois
+    </button>
+
+    <button onclick="resetAllElo()">
+      📉 Reset Classement
+    </button>
+
+    <button onclick="fullReset()">
+      ☢ RESET COMPLET
+    </button>
+
+    <button onclick="logoutAdmin()">
+      🚪 Quitter admin
+    </button>
+
+  </div>
+
 </div>
 
 <!-- =========================
@@ -379,7 +445,7 @@ Ajout de joueur
 
     <div class="actions">
 
-  <button onclick="saveMatch()" class="btn-add">
+  <button onclick="saveMatch(event)" class="btn-add">
     <img src="img/save.png" alt="">
     Enregistrer
   </button>
@@ -509,33 +575,70 @@ Ajout de joueur
     </div>
 
   </div>
+
+</div>
 </div>
 
 <!-- =========================
-📜 HISTORIQUE AMÉLIORÉ
+📜 HISTORIQUE + TENDANCE ELO
 ========================= -->
 <div id="history" class="modal">
-  <div class="box">
+  <div class="box history-box">
 
     <h3>📜 Historique des matchs</h3>
 
-    <!-- 🔥 SELECT JOUEUR -->
-    <select id="historyPlayerFilter" onchange="loadMatches()">
-      <option value="">-- Tous les joueurs --</option>
-    </select>
+    <!-- =========================
+         FILTRES HISTORIQUE
+    ========================= -->
+    <div class="history-top">
 
- <!-- Filtre défaite/victoire -->
-    <select id="historyResultFilter" onchange="loadMatches()">
-      <option value="">-- Tous les résultats --</option>
-      <option value="win">Victoire</option>
-      <option value="loss">Défaite</option>
-    </select>
+      <!-- 👤 filtre joueur -->
+      <select id="historyPlayerFilter" onchange="loadMatches(); loadPlayerEloTrend();">
+        <option value="">-- Tous les joueurs --</option>
+      </select>
 
-    <!-- 🔥 LISTE SCROLLABLE -->
-    <div style="max-height:300px; overflow-y:auto; margin-top:10px;">
-      <ul id="matchHistory"></ul>
+      <!-- 🟢 filtre victoire / défaite -->
+      <select id="historyResultFilter" onchange="loadMatches()">
+        <option value="">-- Tous les résultats --</option>
+        <option value="win">Victoire</option>
+        <option value="loss">Défaite</option>
+      </select>
+
+      <!-- 📜 liste historique -->
+      <div class="history-list">
+        <ul id="matchHistory"></ul>
+      </div>
+
     </div>
 
+    <!-- =========================
+         GRAPHIQUE
+    ========================= -->
+    <div class="history-bottom">
+
+      <h3>📈 Évolution ELO</h3>
+
+      <!-- 👤 joueur 1 -->
+      <select id="trendPlayerFilter" onchange="loadPlayerEloTrend()">
+        <option value="">-- Joueur --</option>
+      </select>
+
+      <!-- 👤 joueur 2 optionnel -->
+      <select id="trendPlayerFilter2" onchange="loadPlayerEloTrend()">
+        <option value="">-- Joueur 2 (optionnel) --</option>
+      </select>
+
+      <div style="margin-top:10px;">
+        <canvas id="eloChart"></canvas>
+      </div>
+
+      <div id="trendStats"></div>
+
+    </div>
+
+    <!-- =========================
+         BOUTON FERMER
+    ========================= -->
     <div class="actions">
       <button onclick="closeModal('history')" class="btn-danger">
         <img src="img/closed.png" alt="">
@@ -546,8 +649,9 @@ Ajout de joueur
   </div>
 </div>
 
+
 <!-- =========================
-💬 COMMENTAIRES
+�💬 COMMENTAIRES
 ========================= -->
 <div id="comment" class="modal">
   <div class="box">
