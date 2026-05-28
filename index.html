@@ -94,27 +94,48 @@
 👥 JOUEURS
 ========================= -->
     <div id="players" class="modal">
-      <div class="box">
-        <h3 class="title">Joueurs</h3>
+  <div class="box">
 
-        <input id="playerInput" type="text" placeholder="Nom du joueur" oninput="validatePlayer()">
+    <h3 class="title">Joueurs</h3>
 
-        <div id="playerError" class="error-message" style="display:none;"></div>
+    <!-- LISTE JOUEURS -->
+    <div id="playersList"></div>
 
-        <div class="actions">
-          <button onclick="addPlayer()" class="btn-add">
-            <img src="img/addPlayer.png" alt="">
-            Ajouter joueur
-          </button>
-          <button onclick="closeModal('players')" class="btn-danger">
-            <img src="img/closed.png" alt="">
-            Fermer
-          </button>
-        </div>
+    <!-- INPUT AJOUT -->
+    <input
+      id="playerInput"
+      type="text"
+      placeholder="Nom du joueur"
+      oninput="validatePlayer()"
+    >
 
-        <div id="playerMessage"></div>
-      </div>
+    <!-- MESSAGE ERREUR -->
+    <div
+      id="playerError"
+      class="error-message"
+      style="display:none;"
+    ></div>
+
+    <!-- ACTIONS -->
+    <div class="actions">
+
+      <button onclick="addPlayer()" class="btn-add">
+        <img src="img/addPlayer.png" alt="">
+        Ajouter joueur
+      </button>
+
+      <button onclick="closeModal('players')" class="btn-danger">
+        <img src="img/closed.png" alt="">
+        Fermer
+      </button>
+
     </div>
+
+    <!-- MESSAGE INFO -->
+    <div id="playerMessage"></div>
+
+  </div>
+</div>
 
     <!-- =========================
 🏆 TOURNOI
@@ -369,6 +390,12 @@ CREATE TOURNAMENT
     </div>
 
   </div>
+
+  <!-- =========================
+📋 LISTE JOUEURS ADMIN
+========================= -->
+<div id="playersList" style="margin-top:15px; max-height:300px; overflow:auto;">
+</div>
 
   <!-- =========================
 ➕ SCORE

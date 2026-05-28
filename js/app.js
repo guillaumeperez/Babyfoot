@@ -269,20 +269,26 @@ window.resetAllElo = async function () {
   loadRanking?.();
 };
 
-// Supprime un joueur
-window.deletePlayer = async function (playerId) {
-  const confirmDelete = confirm("⚠️ Supprimer ce joueur ?");
+window.openModal = function (id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
 
-  if (!confirmDelete) return;
+  modal.style.display = "block";
 
-  await deleteDoc(doc(db, "players", playerId));
+  // 👇 hooks automatiques selon modal
+  if (id === "players") {
+    loadPlayersModal?.();
+  }
 
-  alert("✅ Joueur supprimé");
+  if (id === "ranking") {
+    loadRanking?.();
+  }
 
-  loadPlayers?.();
-  loadRanking?.();
+  if (id === "history") {
+    loadMatches?.();
+    loadPlayersFilter?.();
+  }
 };
-
 // RESET COMPLET ☢
 window.fullReset = async function () {
   const confirmReset = confirm("☢ RESET COMPLET APPLICATION ?");
@@ -322,6 +328,59 @@ window.fullReset = async function () {
   loadRanking?.();
   loadMatches?.();
   loadPlayers?.();
+};
+
+// Supprime un joueur
+
+window.togglePlayer = async function (playerId, isActive) {
+  const confirmAction = confirm(
+    isActive ? "⚠️ Désactiver ce joueur ?" : "♻️ Réactiver ce joueur ?",
+  );
+
+  if (!confirmAction) return;
+
+  await safeUpdateDoc(doc(db, "players", playerId), {
+    active: !isActive,
+  });
+
+  loadPlayersModal?.();
+  loadPlayersFilter?.();
+  loadRanking?.();
+};
+
+window.loadPlayersModal = async function () {
+  const container = document.getElementById("playersList");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const snapshot = await safeGetDocs(collection(db, "players"));
+
+  snapshot.forEach((docSnap) => {
+    const p = docSnap.data();
+
+    const isActive = p.active !== false;
+
+    const div = document.createElement("div");
+    div.style.display = "flex";
+    div.style.justifyContent = "space-between";
+    div.style.padding = "6px 0";
+    div.style.borderBottom = "1px solid #eee";
+
+    div.innerHTML = `
+      <span>• ${p.name}</span>
+
+      ${
+        window.isAdmin
+          ? `<button onclick="togglePlayer('${docSnap.id}', ${isActive})">
+              ${isActive ? "🚫" : "♻️"}
+            </button>`
+          : ""
+      }
+    `;
+
+    container.appendChild(div);
+  });
 };
 
 // =========================
@@ -665,11 +724,13 @@ window.deleteMatch = async function (matchId) {
         // 💾 UPDATE PLAYER
         // =========================
 
+        const safeHistory = p.history ? [...p.history] : [];
+
         await safeUpdateDoc(playerRef, {
           elo: p.elo,
           wins,
           losses,
-          history,
+          history: safeHistory,
           lastDiff: 0,
         });
 
@@ -1247,23 +1308,31 @@ window.loadPlayersFilter = async function () {
 
   snapshot.forEach((doc) => {
     const p = doc.data();
+
+    // 🚫 ignore les joueurs désactivés
+    if (p.active === false) return;
+
+    if (!p.name) return; // sécurité bonus
+
     const option = document.createElement("option");
     option.value = p.name;
     option.textContent = p.name;
+
     select.appendChild(option);
   });
 
-  // 🔥 SYNCHRONISER AVEC LA TENDANCE
-  select.addEventListener("change", function () {
+  // 🔥 éviter d'empiler plusieurs listeners
+  select.onchange = function () {
     const trendSelect = document.getElementById("trendPlayerFilter");
+
     if (trendSelect) {
       trendSelect.value = this.value;
-      // Déclenche la mise à jour du graphique
-      if (typeof loadPlayerEloTrend === "function") {
-        loadPlayerEloTrend();
-      }
     }
-  });
+
+    if (typeof loadPlayerEloTrend === "function") {
+      loadPlayerEloTrend();
+    }
+  };
 };
 
 // =========================
@@ -1447,6 +1516,7 @@ window.removeManualTeam = function (teamId) {
 // =========================
 window.loadPlayersForTeam = async function (teamId) {
   const snapshot = await safeGetDocs(collection(db, "players"));
+
   const select1 = document.getElementById(`teamPlayer1-${teamId}`);
   const select2 = document.getElementById(`teamPlayer2-${teamId}`);
 
@@ -1458,16 +1528,21 @@ window.loadPlayersForTeam = async function (teamId) {
   snapshot.forEach((doc) => {
     const p = doc.data();
 
-    // Ajouter à select1
+    // 🚫 ignore joueurs désactivés
+    if (p.active === false) return;
+
+    // sécurité
+    if (!p.name) return;
+
     const option1 = document.createElement("option");
     option1.value = p.name;
     option1.textContent = p.name;
-    select1.appendChild(option1);
 
-    // Ajouter à select2
     const option2 = document.createElement("option");
     option2.value = p.name;
     option2.textContent = p.name;
+
+    select1.appendChild(option1);
     select2.appendChild(option2);
   });
 };
