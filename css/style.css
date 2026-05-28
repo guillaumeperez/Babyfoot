@@ -80,8 +80,8 @@ button img {
 /* bouton ajouter */
 .btn-add {
   background: transparent !important;
-  color: #16a34a;              /* ✅ vert lisible */
-  border: 2px solid #16a34a;   /* ↓ contour moins épais */
+  color: #16a34a; /* ✅ vert lisible */
+  border: 2px solid #16a34a; /* ↓ contour moins épais */
 
   display: flex;
   align-items: center;
@@ -95,7 +95,7 @@ button img {
 
 .btn-danger {
   background: transparent !important;
-  color: #dc2626;              /* ✅ rouge lisible */
+  color: #dc2626; /* ✅ rouge lisible */
   border: 2px solid #dc2626;
 
   display: flex;
@@ -145,7 +145,7 @@ button img {
   color: #1e3a5f;
 
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(0,0,0,0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 
   transition: 0.2s;
 }
@@ -170,7 +170,7 @@ button img {
   align-items: center;
 
   border-radius: 20px;
-  background: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.85);
   color: #1e293b;
 }
 
@@ -198,7 +198,7 @@ button img {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0, 0, 0, 0.35);
   justify-content: center;
   align-items: center;
   overflow-y: auto;
@@ -319,9 +319,21 @@ button img {
 }
 
 /* hauteurs réduites */
-.podium-1 { background: gold; height: 90px; order: 2; }
-.podium-2 { background: silver; height: 70px; order: 1; }
-.podium-3 { background: #cd7f32; height: 60px; order: 3; }
+.podium-1 {
+  background: gold;
+  height: 90px;
+  order: 2;
+}
+.podium-2 {
+  background: silver;
+  height: 70px;
+  order: 1;
+}
+.podium-3 {
+  background: #cd7f32;
+  height: 60px;
+  order: 3;
+}
 /* =========================
    ⚽ SCORE
 ========================= */
@@ -355,7 +367,7 @@ button img {
 
   border-radius: 8px;
 
-  background: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.85);
   color: #1e293b;
 }
 
@@ -364,7 +376,8 @@ table {
   color: #1e293b;
 }
 
-th, td {
+th,
+td {
   padding: 8px;
   border-bottom: 1px solid #cbd5e1;
 }
@@ -373,8 +386,9 @@ th, td {
    💬 INPUT
 ========================= */
 
-input, textarea {
-  background: rgba(255,255,255,0.9);
+input,
+textarea {
+  background: rgba(255, 255, 255, 0.9);
   color: #1e293b;
   border-radius: 8px;
   border: 1px solid #cbd5e1;
@@ -388,11 +402,11 @@ input, textarea {
   max-width: 460px;
   margin: 10px auto;
   padding: 12px;
-  background: rgba(255,255,255,0.94);
+  background: rgba(255, 255, 255, 0.94);
   color: #1e293b;
   border-radius: 16px;
-  box-shadow: 0 10px 20px rgba(15,23,42,0.09);
-  border: 1px solid rgba(148,163,184,0.18);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.09);
+  border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
 .match-card h4 {
@@ -455,7 +469,6 @@ input, textarea {
   margin: 0;
 }
 
-
 /* =========================
    Footer
 ========================= */
@@ -501,7 +514,7 @@ footer {
 ========================= */
 
 .accordion {
-  display: flex;              /* force en colonne */
+  display: flex; /* force en colonne */
   width: 100%;
 
   padding: 12px;
@@ -533,13 +546,11 @@ footer {
   background: #2563eb;
 }
 
-
 /* =========================
 📱 MOBILE OPTIMISATION
 ========================= */
 /* MOBILE */
 @media (max-width: 900px) {
-
   .menu {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
@@ -580,33 +591,34 @@ footer {
     max-width: 90%;
     margin: 20px auto;
 
-    max-height: 85vh;      /* 🔥 hauteur max écran */
-    overflow-y: auto;      /* 🔥 scroll interne */
+    max-height: 85vh; /* 🔥 hauteur max écran */
+    overflow-y: auto; /* 🔥 scroll interne */
 
     padding: 15px;
   }
 
   .modal.active {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
- footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-}
+  footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+  }
 }
 
 body.no-scroll {
   overflow: hidden;
-  position: fixed;   /* 🔥 bloque totalement */
+  position: fixed; /* 🔥 bloque totalement */
   width: 100%;
 }
 
-html, body {
+html,
+body {
   overscroll-behavior: none; /* 🔥 stop le bounce mobile */
 }
 
@@ -621,7 +633,6 @@ body.no-scroll {
 📱 EXTRA SMALL MOBILE (< 480px)
 ========================= */
 @media (max-width: 480px) {
-
   .menu {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
@@ -662,7 +673,9 @@ body.no-scroll {
     max-height: 90vh;
   }
 
-  input, select, textarea {
+  input,
+  select,
+  textarea {
     font-size: 16px;
     padding: 8px;
   }
@@ -686,10 +699,10 @@ body.no-scroll {
     font-size: 12px;
   }
 
-  th, td {
+  th,
+  td {
     padding: 6px 4px;
   }
-
 }
 
 /* =========================
@@ -709,7 +722,6 @@ body.no-scroll {
   border-radius: 8px;
   margin-bottom: 10px;
 }
-
 
 /* =========================
 Tournoi
@@ -737,8 +749,8 @@ Tournoi
   max-width: 120px;
   height: 60px;
   border-radius: 18px;
-  border: 2px solid rgba(0,0,0,0.12);
-  background: rgba(255,255,255,0.95);
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.95);
   color: black;
   text-align: center;
   font-size: 20px;
@@ -831,20 +843,20 @@ Tournoi
 }
 
 .history-box {
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 18px;
   padding: 18px;
   margin-top: 20px;
 }
 
 #tournamentMatches .match-card {
-  background: rgba(255,255,255,0.96);
-  border: 1px solid rgba(148,163,184,0.2);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 16px;
   padding: 12px;
   margin-bottom: 10px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 10px 20px rgba(15,23,42,0.08);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
 }
 
 #tournamentMatches .match-row {
@@ -871,14 +883,22 @@ Tournoi
 }
 
 #tournamentMatches .team-blue {
-  background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(37,99,235,0.12));
-  border: 1px solid rgba(96,165,250,0.35);
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.2),
+    rgba(37, 99, 235, 0.12)
+  );
+  border: 1px solid rgba(96, 165, 250, 0.35);
   color: #1e40af;
 }
 
 #tournamentMatches .team-red {
-  background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(185,28,28,0.12));
-  border: 1px solid rgba(248,113,113,0.35);
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.18),
+    rgba(185, 28, 28, 0.12)
+  );
+  border: 1px solid rgba(248, 113, 113, 0.35);
   color: #b91c1c;
 }
 
@@ -891,14 +911,14 @@ Tournoi
 }
 
 .team-blue {
-  background: rgba(59,130,246,0.16);
-  border: 1px solid rgba(59,130,246,0.3);
+  background: rgba(59, 130, 246, 0.16);
+  border: 1px solid rgba(59, 130, 246, 0.3);
   color: #1e40af;
 }
 
 .team-red {
-  background: rgba(239,68,68,0.16);
-  border: 1px solid rgba(239,68,68,0.3);
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   color: #b91c1c;
 }
 
@@ -908,7 +928,6 @@ Tournoi
 
 .team-blue,
 .team-red {
-
   padding: 18px;
 
   border-radius: 20px;
@@ -920,23 +939,18 @@ Tournoi
   margin-bottom: 15px;
 
   color: white;
-
 }
 
 .team-blue {
+  background: rgba(59, 130, 246, 0.18);
 
-  background: rgba(59,130,246,0.18);
-
-  border: 2px solid rgba(59,130,246,0.25);
-
+  border: 2px solid rgba(59, 130, 246, 0.25);
 }
 
 .team-red {
+  background: rgba(239, 68, 68, 0.18);
 
-  background: rgba(239,68,68,0.18);
-
-  border: 2px solid rgba(239,68,68,0.25);
-
+  border: 2px solid rgba(239, 68, 68, 0.25);
 }
 
 /* =========================
@@ -988,7 +1002,6 @@ Tournoi
 ========================= */
 
 .score-box {
-
   display: flex;
 
   justify-content: center;
@@ -996,7 +1009,6 @@ Tournoi
   gap: 25px;
 
   margin-top: 20px;
-
 }
 
 /* =========================
@@ -1004,7 +1016,6 @@ Tournoi
 ========================= */
 
 .score-blue input {
-
   width: 120px;
 
   height: 80px;
@@ -1013,7 +1024,7 @@ Tournoi
 
   border: 3px solid #2563eb;
 
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
 
   color: #2563eb;
 
@@ -1024,7 +1035,6 @@ Tournoi
   font-weight: bold;
 
   outline: none;
-
 }
 
 /* =========================
@@ -1032,7 +1042,6 @@ Tournoi
 ========================= */
 
 .score-red input {
-
   width: 120px;
 
   height: 80px;
@@ -1041,7 +1050,7 @@ Tournoi
 
   border: 3px solid #ef4444;
 
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
 
   color: #ef4444;
 
@@ -1052,25 +1061,20 @@ Tournoi
   font-weight: bold;
 
   outline: none;
-
 }
 
 /* placeholder */
 
 .score-blue input::placeholder {
-
   color: #2563eb;
 
   opacity: 1;
-
 }
 
 .score-red input::placeholder {
-
   color: #ef4444;
 
   opacity: 1;
-
 }
 
 /* =========================
@@ -1078,7 +1082,6 @@ Tournoi
 ========================= */
 
 .save-score-btn {
-
   margin-top: 18px;
 
   width: 100%;
@@ -1089,11 +1092,7 @@ Tournoi
 
   border-radius: 20px;
 
-  background: linear-gradient(
-    135deg,
-    #3b82f6,
-    #2563eb
-  );
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
 
   color: white;
 
@@ -1104,151 +1103,140 @@ Tournoi
   cursor: pointer;
 
   transition: 0.2s;
-
 }
 
 .save-score-btn:hover {
-
   transform: scale(1.02);
-
 }
 /* =========================
 💾 BOUTON
 ========================= */
 
-#tournamentMatches .score-box button{
-  height:60px;
-  padding:0 22px;
-  border:none;
-  border-radius:18px;
-  background:linear-gradient(
-    135deg,
-    #3b82f6,
-    #2563eb
-  );
-  color:white;
-  font-size:18px;
-  font-weight:bold;
-  cursor:pointer;
-  transition:0.2s;
+#tournamentMatches .score-box button {
+  height: 60px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-#tournamentMatches .score-box button:hover{
-  transform:scale(1.03);
+#tournamentMatches .score-box button:hover {
+  transform: scale(1.03);
 }
 
 /* =========================
 🎯 SCORE TOURNOI
 ========================= */
 
-.score-box{
-  display:flex;
-  justify-content:center;
-  align-items:flex-end;
-  gap:15px;
-  margin-top:20px;
-  flex-wrap:wrap;
+.score-box {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 15px;
+  margin-top: 20px;
+  flex-wrap: wrap;
 }
 
 /* =========================
 🔵 SCORE BLEU
 ========================= */
 
-.score-blue{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:6px;
+.score-blue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
-.score-blue label{
-  color:#3b82f6;
-  font-size:16px;
-  font-weight:bold;
+.score-blue label {
+  color: #3b82f6;
+  font-size: 16px;
+  font-weight: bold;
 }
 
-.score-blue input{
-  width:76px;
-  height:50px;
-  border-radius:14px;
-  border:2px solid #3b82f6;
-  background:rgba(255,255,255,0.08);
-  color:#3b82f6;
-  text-align:center;
-  font-size:24px;
-  font-weight:bold;
-  outline:none;
+.score-blue input {
+  width: 76px;
+  height: 50px;
+  border-radius: 14px;
+  border: 2px solid #3b82f6;
+  background: rgba(255, 255, 255, 0.08);
+  color: #3b82f6;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  outline: none;
 }
 
 /* placeholder bleu */
 
-.score-blue input::placeholder{
-  color:#3b82f6;
-  opacity:1;
-  text-align:center;
+.score-blue input::placeholder {
+  color: #3b82f6;
+  opacity: 1;
+  text-align: center;
 }
 
 /* =========================
 🔴 SCORE ROUGE
 ========================= */
 
-.score-red{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:6px;
+.score-red {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
-.score-red label{
-  color:#ef4444;
-  font-size:16px;
-  font-weight:bold;
+.score-red label {
+  color: #ef4444;
+  font-size: 16px;
+  font-weight: bold;
 }
 
-.score-red input{
-  width:76px;
-  height:50px;
-  border-radius:14px;
-  border:2px solid #ef4444;
-  background:rgba(255,255,255,0.08);
-  color:#ef4444;
-  text-align:center;
-  font-size:24px;
-  font-weight:bold;
-  outline:none;
+.score-red input {
+  width: 76px;
+  height: 50px;
+  border-radius: 14px;
+  border: 2px solid #ef4444;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ef4444;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  outline: none;
 }
 
 /* placeholder rouge */
 
-.score-red input::placeholder{
-  color:#ef4444;
-  opacity:1;
-  text-align:center;
+.score-red input::placeholder {
+  color: #ef4444;
+  opacity: 1;
+  text-align: center;
 }
 
 /* =========================
 💾 BOUTON SAVE
 ========================= */
 
-.score-box button{
-  height:60px;
-  padding:0 22px;
-  border:none;
-  border-radius:18px;
-  background:linear-gradient(
-    135deg,
-    #3b82f6,
-    #2563eb
-  );
-  color:white;
-  font-size:18px;
-  font-weight:bold;
-  cursor:pointer;
-  transition:0.2s;
+.score-box button {
+  height: 60px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-.score-box button:hover{
-  transform:scale(1.03);
+.score-box button:hover {
+  transform: scale(1.03);
 }
 
 /* =========================
@@ -1272,7 +1260,7 @@ Tournoi
 /* zone graphique */
 
 .history-bottom {
-  background: rgba(255,255,255,0.75);
+  background: rgba(255, 255, 255, 0.75);
   border-radius: 16px;
   padding: 15px;
 }
@@ -1286,7 +1274,6 @@ Tournoi
 /* mobile */
 
 @media (max-width: 768px) {
-
   .history-top {
     max-height: 250px;
   }
@@ -1294,7 +1281,6 @@ Tournoi
   #eloChart {
     max-height: 220px;
   }
-
 }
 
 .history-box {

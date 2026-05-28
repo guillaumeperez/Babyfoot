@@ -26,14 +26,14 @@ import {
   deleteDoc,
   query,
   orderBy,
-  setDoc
+  setDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import {
   getAuth,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 import { updateElo2v2 } from "./elo.js";
@@ -92,8 +92,6 @@ async function safeGetDocs(q) {
   return await getDocs(q);
 }
 
-
-
 // =========================
 // ⚙️ CONFIG FIREBASE
 // =========================
@@ -103,14 +101,12 @@ const firebaseConfig = {
   projectId: "babyfoot-a78f5",
   storageBucket: "babyfoot-a78f5.firebasestorage.app",
   messagingSenderId: "579925171552",
-  appId: "1:579925171552:web:b6faf8313581b7b8dd5205"
+  appId: "1:579925171552:web:b6faf8313581b7b8dd5205",
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-
-
 
 // =========================
 // 🔐 LOGIN ADMIN
@@ -144,7 +140,6 @@ window.loginAdmin = async function () {
     if (panel) panel.style.display = "block";
 
     alert("✅ Admin connecté");
-
   } catch (e) {
     console.error(e);
     alert("❌ Erreur connexion");
@@ -153,7 +148,6 @@ window.loginAdmin = async function () {
 window.isAdmin = false;
 
 onAuthStateChanged(auth, (user) => {
-
   const panel = document.getElementById("adminPanel");
   const badge = document.getElementById("adminBadge");
 
@@ -177,7 +171,6 @@ window.logoutAdmin = async function () {
     if (panel) panel.style.display = "none";
 
     alert("🚪 Déconnecté");
-
   } catch (e) {
     console.error(e);
     alert("❌ Erreur déconnexion");
@@ -192,13 +185,11 @@ let isAdmin = false;
 window.isAdmin = false;
 
 onAuthStateChanged(auth, (user) => {
-
   const panel = document.getElementById("adminPanel");
   const badge = document.getElementById("adminBadge");
 
   // 🔐 SEUL TON EMAIL EST ADMIN
   if (user && user.email === "guillaumeper34@gmail.com") {
-
     window.isAdmin = true;
 
     if (panel) panel.style.display = "block";
@@ -206,9 +197,7 @@ onAuthStateChanged(auth, (user) => {
 
     // option si tu as des demandes admin
     afficherDemandes?.();
-
   } else {
-
     window.isAdmin = false;
 
     if (panel) panel.style.display = "none";
@@ -220,23 +209,17 @@ onAuthStateChanged(auth, (user) => {
 });
 
 // =========================
-//  ADMIN 
+//  ADMIN
 // =========================
-
 
 //  Supp les matchs
 
 window.resetAllMatches = async function () {
-
-  const confirmReset = confirm(
-    "⚠️ Supprimer TOUS les matchs ?"
-  );
+  const confirmReset = confirm("⚠️ Supprimer TOUS les matchs ?");
 
   if (!confirmReset) return;
 
-  const snapshot = await getDocs(
-    collection(db, "matches")
-  );
+  const snapshot = await getDocs(collection(db, "matches"));
 
   for (const d of snapshot.docs) {
     await deleteDoc(doc(db, "matches", d.id));
@@ -248,19 +231,13 @@ window.resetAllMatches = async function () {
   loadRanking?.();
 };
 
-
 //  Supp les tournois
 window.resetAllTournaments = async function () {
-
-  const confirmReset = confirm(
-    "⚠️ Supprimer TOUS les tournois ?"
-  );
+  const confirmReset = confirm("⚠️ Supprimer TOUS les tournois ?");
 
   if (!confirmReset) return;
 
-  const snapshot = await getDocs(
-    collection(db, "tournaments")
-  );
+  const snapshot = await getDocs(collection(db, "tournaments"));
 
   for (const d of snapshot.docs) {
     await deleteDoc(doc(db, "tournaments", d.id));
@@ -271,30 +248,21 @@ window.resetAllTournaments = async function () {
 
 //  Reset elo + classement
 window.resetAllElo = async function () {
-
-  const confirmReset = confirm(
-    "⚠️ Reset du classement ELO ?"
-  );
+  const confirmReset = confirm("⚠️ Reset du classement ELO ?");
 
   if (!confirmReset) return;
 
-  const snapshot = await getDocs(
-    collection(db, "players")
-  );
+  const snapshot = await getDocs(collection(db, "players"));
 
   for (const d of snapshot.docs) {
-
-    await updateDoc(
-      doc(db, "players", d.id),
-      {
-        elo: 2000,
-        victory: 0,
-        defeat: 0,
-        goals: 0,
-        goalsAgainst: 0,
-        games: 0
-      }
-    );
+    await updateDoc(doc(db, "players", d.id), {
+      elo: 2000,
+      victory: 0,
+      defeat: 0,
+      goals: 0,
+      goalsAgainst: 0,
+      games: 0,
+    });
   }
 
   alert("✅ Classement reset");
@@ -303,16 +271,11 @@ window.resetAllElo = async function () {
 
 // Supprime un joueur
 window.deletePlayer = async function (playerId) {
-
-  const confirmDelete = confirm(
-    "⚠️ Supprimer ce joueur ?"
-  );
+  const confirmDelete = confirm("⚠️ Supprimer ce joueur ?");
 
   if (!confirmDelete) return;
 
-  await deleteDoc(
-    doc(db, "players", playerId)
-  );
+  await deleteDoc(doc(db, "players", playerId));
 
   alert("✅ Joueur supprimé");
 
@@ -322,49 +285,36 @@ window.deletePlayer = async function (playerId) {
 
 // RESET COMPLET ☢
 window.fullReset = async function () {
-
-  const confirmReset = confirm(
-    "☢ RESET COMPLET APPLICATION ?"
-  );
+  const confirmReset = confirm("☢ RESET COMPLET APPLICATION ?");
 
   if (!confirmReset) return;
 
   // MATCHS
-  const matches = await getDocs(
-    collection(db, "matches")
-  );
+  const matches = await getDocs(collection(db, "matches"));
 
   for (const d of matches.docs) {
     await deleteDoc(doc(db, "matches", d.id));
   }
 
   // TOURNOIS
-  const tournaments = await getDocs(
-    collection(db, "tournaments")
-  );
+  const tournaments = await getDocs(collection(db, "tournaments"));
 
   for (const d of tournaments.docs) {
     await deleteDoc(doc(db, "tournaments", d.id));
   }
 
   // RESET JOUEURS
-  const players = await getDocs(
-    collection(db, "players")
-  );
+  const players = await getDocs(collection(db, "players"));
 
   for (const d of players.docs) {
-
-    await updateDoc(
-      doc(db, "players", d.id),
-      {
-        elo: 1000,
-        victory: 0,
-        defeat: 0,
-        goals: 0,
-        goalsAgainst: 0,
-        games: 0
-      }
-    );
+    await updateDoc(doc(db, "players", d.id), {
+      elo: 1000,
+      victory: 0,
+      defeat: 0,
+      goals: 0,
+      goalsAgainst: 0,
+      games: 0,
+    });
   }
 
   alert("☢ RESET COMPLET TERMINÉ");
@@ -382,15 +332,15 @@ window.loadPlayersSelect = async function () {
   if (!snapshot || !snapshot.forEach) return;
   const selects = ["b1", "b2", "r1", "r2"];
 
-  selects.forEach(id => {
+  selects.forEach((id) => {
     const select = document.getElementById(id);
     if (select) select.innerHTML = "<option value=''>-- choisir --</option>";
   });
 
-  snapshot.forEach(doc => {
+  snapshot.forEach((doc) => {
     const p = doc.data();
 
-    selects.forEach(id => {
+    selects.forEach((id) => {
       const select = document.getElementById(id);
       if (!select) return;
 
@@ -421,7 +371,7 @@ window.addPlayer = async function () {
   const snapshot = await safeGetDocs(collection(db, "demandes"));
 
   const exists = snapshot.docs.some(
-    d => d.data().name.toLowerCase() === name.toLowerCase()
+    (d) => d.data().name.toLowerCase() === name.toLowerCase(),
   );
 
   if (exists) {
@@ -430,7 +380,7 @@ window.addPlayer = async function () {
 
   await safeAddDoc(collection(db, "demandes"), {
     name: name,
-    date: new Date()
+    date: new Date(),
   });
 
   input.value = "";
@@ -446,7 +396,7 @@ window.addComment = async function () {
 
   await safeAddDoc(collection(db, "comments"), {
     text,
-    createdAt: serverTimestamp()
+    createdAt: serverTimestamp(),
   });
 
   textarea.value = "";
@@ -459,14 +409,10 @@ function showPlayerMessage(text, color) {
 
   box.style.display = "block";
   box.style.background =
-    color === "green"
-      ? "#16a34a"
-      : color === "orange"
-      ? "#f59e0b"
-      : "#dc2626";
+    color === "green" ? "#16a34a" : color === "orange" ? "#f59e0b" : "#dc2626";
   box.textContent = text;
 
-  setTimeout(() => box.style.display = "none", 2000);
+  setTimeout(() => (box.style.display = "none"), 2000);
 }
 
 // =========================
@@ -484,7 +430,7 @@ window.afficherDemandes = async function () {
     return;
   }
 
-  snapshot.forEach(docSnap => {
+  snapshot.forEach((docSnap) => {
     const data = docSnap.data();
 
     const div = document.createElement("div");
@@ -526,7 +472,7 @@ window.validerDemande = async function (id, name) {
     name: name,
     wins: 0,
     losses: 0,
-    elo: 2000
+    elo: 2000,
   });
 
   // Supprime la demande
@@ -566,47 +512,47 @@ window.eloBackup = {}; // stocke les backups
 window.backupPlayerELO = async function (playerName) {
   const playerRef = doc(db, "players", playerName.toLowerCase());
   const playerSnap = await getDoc(playerRef);
-  
+
   if (playerSnap.exists()) {
     eloBackup[playerName.toLowerCase()] = {
       elo: playerSnap.data().elo,
       wins: playerSnap.data().wins,
       losses: playerSnap.data().losses,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 };
 
 window.backupAllPlayersELO = async function () {
   const snapshot = await safeGetDocs(collection(db, "players"));
-  snapshot.forEach(docSnap => {
+  snapshot.forEach((docSnap) => {
     const name = docSnap.id;
     eloBackup[name] = {
       elo: docSnap.data().elo,
       wins: docSnap.data().wins,
       losses: docSnap.data().losses,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   });
 };
 
 window.restorePlayerELO = async function (playerName) {
   const key = playerName.toLowerCase();
-  
+
   if (!eloBackup[key]) {
     alert("❌ Aucun backup trouvé pour " + playerName);
     return;
   }
 
   const backup = eloBackup[key];
-  
+
   try {
     await safeUpdateDoc(doc(db, "players", key), {
       elo: backup.elo,
       wins: backup.wins,
-      losses: backup.losses
+      losses: backup.losses,
     });
-    
+
     alert(`✅ ELO restauré pour ${playerName}\n⚖️ ${backup.elo} pts`);
     delete eloBackup[key];
   } catch (e) {
@@ -616,109 +562,136 @@ window.restorePlayerELO = async function (playerName) {
 };
 
 // =========================
-// 🗑 DELETE MATCH (with ELO restore)
+// 🗑 DELETE MATCH + RESTORE ELO
 // =========================
+
 window.deleteMatch = async function (matchId) {
-  if (!isAdmin) {
+  // 🔐 Vérification admin
+  if (!window.isAdmin) {
     alert("❌ Admin requis");
     return;
   }
 
-  if (!confirm("Supprimer ce match et restaurer ELO ?")) return;
+  // ⚠️ Confirmation
+  const confirmation = confirm("Supprimer ce match et restaurer les ELO ?");
+
+  if (!confirmation) return;
 
   try {
+    // 📄 Référence du match
     const matchRef = doc(db, "matches", matchId);
+
+    // 📥 Récupération du match
     const matchSnap = await safeGetDoc(matchRef);
 
+    // ❌ Match introuvable
     if (!matchSnap.exists()) {
       alert("❌ Match non trouvé");
       return;
     }
 
+    // 📦 Données du match
     const match = matchSnap.data();
 
-// =========================
-// 🔥 RESTORE ELO BEFORE MATCH
-// =========================
+    console.log("🗑 Suppression match :", match);
 
-if (match.eloBefore) {
+    // =========================
+    // 🔥 RESTORE ELO
+    // =========================
 
-  const players = [
-    {
-      name: match.b1,
-      elo: match.eloBefore.b1,
-      diff: match.eloChange?.b1 || 0
-    },
-    {
-      name: match.b2,
-      elo: match.eloBefore.b2,
-      diff: match.eloChange?.b2 || 0
-    },
-    {
-      name: match.r1,
-      elo: match.eloBefore.r1,
-      diff: match.eloChange?.r1 || 0
-    },
-    {
-      name: match.r2,
-      elo: match.eloBefore.r2,
-      diff: match.eloChange?.r2 || 0
+    if (match.eloBefore) {
+      const players = [
+        {
+          name: match.b1,
+          elo: match.eloBefore.b1,
+          diff: match.eloChange?.b1 || 0,
+        },
+        {
+          name: match.b2,
+          elo: match.eloBefore.b2,
+          diff: match.eloChange?.b2 || 0,
+        },
+        {
+          name: match.r1,
+          elo: match.eloBefore.r1,
+          diff: match.eloChange?.r1 || 0,
+        },
+        {
+          name: match.r2,
+          elo: match.eloBefore.r2,
+          diff: match.eloChange?.r2 || 0,
+        },
+      ];
+
+      for (const p of players) {
+        // joueur vide
+        if (!p.name) continue;
+
+        const playerRef = doc(db, "players", p.name.toLowerCase());
+
+        const playerSnap = await safeGetDoc(playerRef);
+
+        // joueur inexistant
+        if (!playerSnap.exists()) continue;
+
+        const data = playerSnap.data();
+
+        let wins = data.wins || 0;
+        let losses = data.losses || 0;
+
+        // 🔥 Restore win/loss
+        if (p.diff > 0) {
+          wins = Math.max(0, wins - 1);
+        } else if (p.diff < 0) {
+          losses = Math.max(0, losses - 1);
+        }
+
+        // =========================
+        // 📜 REMOVE ONLY THIS MATCH
+        // =========================
+
+        let history = [...(data.history || [])];
+
+        history = history.filter((h) => {
+          // historique stocké en objet
+          if (typeof h === "object") {
+            return h.matchId !== matchId;
+          }
+
+          return true;
+        });
+
+        // =========================
+        // 💾 UPDATE PLAYER
+        // =========================
+
+        await safeUpdateDoc(playerRef, {
+          elo: p.elo,
+          wins,
+          losses,
+          history,
+          lastDiff: 0,
+        });
+
+        console.log(`♻️ ${p.name} restauré à ${p.elo}`);
+      }
     }
-  ];
 
-  for (const p of players) {
+    // =========================
+    // 🗑 DELETE MATCH
+    // =========================
 
-    if (!p.name) continue;
-
-    const playerRef = doc(
-      db,
-      "players",
-      p.name.toLowerCase()
-    );
-
-    const playerSnap =
-      await safeGetDoc(playerRef);
-
-    if (!playerSnap.exists()) continue;
-
-    const data = playerSnap.data();
-
-    let wins = data.wins || 0;
-    let losses = data.losses || 0;
-
-    // retire victoire/défaite
-    if (p.diff > 0) {
-      wins = Math.max(0, wins - 1);
-    } else {
-      losses = Math.max(0, losses - 1);
-    }
-
-    // retire historique récent
-    let history = [...(data.history || [])];
-
-    if (history.length > 0) {
-      history.pop();
-    }
-
-    await safeUpdateDoc(playerRef, {
-      elo: p.elo,
-      wins,
-      losses,
-      history,
-      lastDiff: 0
-    });
-  }
-}
-
-    // Delete match
     await safeDeleteDoc(matchRef);
 
-    alert("✅ Match supprimé (ELO restauré si joué)");
-    loadMatches();
+    // ✅ Succès
+    alert("✅ Match supprimé + ELO restauré");
 
-  } catch (e) {
-    console.error(e);
-    alert("❌ Erreur suppression");
+    // 🔄 Reload
+    loadMatches?.();
+  } catch (error) {
+    console.error("❌ Erreur suppression :", error);
+
+    alert("❌ Erreur pendant la suppression");
   }
 };
 
@@ -731,7 +704,12 @@ window.deleteTournament = async function (tournamentId) {
     return;
   }
 
-  if (!confirm("Supprimer ce tournoi ?\n⚠️ Les matchs et équipes seront aussi supprimés")) return;
+  if (
+    !confirm(
+      "Supprimer ce tournoi ?\n⚠️ Les matchs et équipes seront aussi supprimés",
+    )
+  )
+    return;
 
   try {
     // backup all players ELO first
@@ -739,7 +717,7 @@ window.deleteTournament = async function (tournamentId) {
 
     // Delete matches
     const matchesSnapshot = await safeGetDocs(
-      collection(db, "tournaments", tournamentId, "matches")
+      collection(db, "tournaments", tournamentId, "matches"),
     );
     for (const matchDoc of matchesSnapshot.docs) {
       await safeDeleteDoc(matchDoc.ref);
@@ -747,7 +725,7 @@ window.deleteTournament = async function (tournamentId) {
 
     // Delete teams
     const teamsSnapshot = await safeGetDocs(
-      collection(db, "tournaments", tournamentId, "teams")
+      collection(db, "tournaments", tournamentId, "teams"),
     );
     for (const teamDoc of teamsSnapshot.docs) {
       await safeDeleteDoc(teamDoc.ref);
@@ -758,7 +736,6 @@ window.deleteTournament = async function (tournamentId) {
 
     alert("✅ Tournoi supprimé\n💾 ELO en backup pour annulation");
     loadTournaments();
-
   } catch (e) {
     console.error(e);
     alert("❌ Erreur suppression");
@@ -812,7 +789,7 @@ window.saveMatch = async function (event) {
       sr,
       type: "classic",
       createdAt: serverTimestamp(),
-      createdAtLocal: Date.now()
+      createdAtLocal: Date.now(),
     };
 
     // 🧪 MODE TEST = ZERO FIREBASE
@@ -836,11 +813,10 @@ window.saveMatch = async function (event) {
       eloAfter: result.eloAfter,
       eloChange: result.eloChange,
 
-  played: true
-});
+      played: true,
+    });
 
     showScoreMessage("✅ Match enregistré", "green");
-
   } catch (e) {
     console.error("saveMatch error:", e);
     alert("Erreur lors de l'enregistrement du match");
@@ -855,7 +831,6 @@ window.saveMatch = async function (event) {
 // =========================
 
 window.loadRanking = async function () {
-
   const tbody = document.getElementById("rankingList");
   const podium = document.getElementById("podium");
 
@@ -877,7 +852,7 @@ window.loadRanking = async function () {
       losses: data.losses || 0,
       elo: data.elo || 2000,
       lastDiff: data.lastDiff || 0,
-      history: data.history || []
+      history: data.history || [],
     });
   });
 
@@ -892,33 +867,31 @@ window.loadRanking = async function () {
   // 🔥 TRI PAR ELO
   players.sort((a, b) => b.elo - a.elo);
 
-  
   // 🏆 PODIUM MODERNE
-const top3 = players.slice(0, 3);
+  const top3 = players.slice(0, 3);
 
-top3.forEach((p, i) => {
-  const div = document.createElement("div");
+  top3.forEach((p, i) => {
+    const div = document.createElement("div");
 
-  div.classList.add("podium-box");
+    div.classList.add("podium-box");
 
-  if (i === 0) div.classList.add("podium-1");
-  if (i === 1) div.classList.add("podium-2");
-  if (i === 2) div.classList.add("podium-3");
+    if (i === 0) div.classList.add("podium-1");
+    if (i === 1) div.classList.add("podium-2");
+    if (i === 2) div.classList.add("podium-3");
 
-  const medal = ["🥇", "🥈", "🥉"][i];
+    const medal = ["🥇", "🥈", "🥉"][i];
 
-  div.innerHTML = `
+    div.innerHTML = `
     <div style="font-size:24px">${medal}</div>
     <span>${p.name}</span>
     <span>${p.elo || 2000}</span>
   `;
 
-  podium.appendChild(div);
-});
+    podium.appendChild(div);
+  });
 
   // 📊 TABLEAU
   players.forEach((p, i) => {
-
     const diff = p.lastDiff || 0;
     const diffText = diff > 0 ? "+" + diff : diff;
 
@@ -926,11 +899,13 @@ top3.forEach((p, i) => {
     if (diff > 0) color = "#22c55e";
     if (diff < 0) color = "#ef4444";
 
-    const form = p.history.map(r => {
-  if (r === "W" || r === "w") return "🟢";
-  if (r === "L" || r === "l") return "🔴";
-  return r; // déjà emoji
-}).join("");
+    const form = p.history
+      .map((r) => {
+        if (r === "W" || r === "w") return "🟢";
+        if (r === "L" || r === "l") return "🔴";
+        return r; // déjà emoji
+      })
+      .join("");
 
     const tr = document.createElement("tr");
 
@@ -952,7 +927,6 @@ top3.forEach((p, i) => {
 // 📊 UPDATE ELO
 // =========================
 async function updatePlayerStats(match) {
-
   // 🔥 sécurité : ne jamais toucher tournoi
   if (match.type === "tournament") {
     console.log("🚫 Match tournoi ignoré ELO global");
@@ -963,7 +937,7 @@ async function updatePlayerStats(match) {
 
   let joueurs = [];
 
-  snapshot.forEach(d => {
+  snapshot.forEach((d) => {
     const p = d.data();
 
     if ([match.b1, match.b2, match.r1, match.r2].includes(p.name)) {
@@ -974,19 +948,17 @@ async function updatePlayerStats(match) {
         oldWins: p.wins || 0,
         oldLosses: p.losses || 0,
         oldHistory: [...(p.history || [])],
-        history: [...(p.history || [])]
+        history: [...(p.history || [])],
       });
     }
   });
 
   const blueWin = match.sb > match.sr;
 
-  const teamBleu = joueurs.filter(j =>
-    [match.b1, match.b2].includes(j.name)
-  );
+  const teamBleu = joueurs.filter((j) => [match.b1, match.b2].includes(j.name));
 
-  const teamRouge = joueurs.filter(j =>
-    [match.r1, match.r2].includes(j.name)
+  const teamRouge = joueurs.filter((j) =>
+    [match.r1, match.r2].includes(j.name),
   );
 
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
@@ -994,14 +966,12 @@ async function updatePlayerStats(match) {
   let simulationResult = [];
 
   for (const j of joueurs) {
-
     let wins = j.wins || 0;
     let losses = j.losses || 0;
 
     const isBlue = [match.b1, match.b2].includes(j.name);
 
-    const isWinner =
-      (isBlue && blueWin) || (!isBlue && !blueWin);
+    const isWinner = (isBlue && blueWin) || (!isBlue && !blueWin);
 
     if (isWinner) {
       wins++;
@@ -1022,7 +992,7 @@ async function updatePlayerStats(match) {
       diff: j.elo - j.oldElo,
       wins,
       losses,
-      history: j.history
+      history: j.history,
     });
 
     // 🚨 IMPORTANT
@@ -1032,39 +1002,46 @@ async function updatePlayerStats(match) {
         losses,
         elo: j.elo,
         lastDiff: Math.round(j.elo - j.oldElo),
-        history: j.history
+        history: j.history,
       });
     }
   }
 
   return {
+    // 🔥 AVANT MATCH
+    eloBefore: {
+      b1: Math.round(teamBleu[0]?.oldElo || 2000),
+      b2: Math.round(teamBleu[1]?.oldElo || 2000),
+      r1: Math.round(teamRouge[0]?.oldElo || 2000),
+      r2: Math.round(teamRouge[1]?.oldElo || 2000),
+    },
 
-  // 🔥 AVANT MATCH
-  eloBefore: {
-    b1: Math.round(teamBleu[0]?.oldElo || 2000),
-    b2: Math.round(teamBleu[1]?.oldElo || 2000),
-    r1: Math.round(teamRouge[0]?.oldElo || 2000),
-    r2: Math.round(teamRouge[1]?.oldElo || 2000),
-  },
+    // 🔥 APRÈS MATCH
+    eloAfter: {
+      b1: Math.round(teamBleu[0]?.elo || 2000),
+      b2: Math.round(teamBleu[1]?.elo || 2000),
+      r1: Math.round(teamRouge[0]?.elo || 2000),
+      r2: Math.round(teamRouge[1]?.elo || 2000),
+    },
 
-  // 🔥 APRÈS MATCH
-  eloAfter: {
-    b1: Math.round(teamBleu[0]?.elo || 2000),
-    b2: Math.round(teamBleu[1]?.elo || 2000),
-    r1: Math.round(teamRouge[0]?.elo || 2000),
-    r2: Math.round(teamRouge[1]?.elo || 2000),
-  },
+    // 🔥 DIFF
+    eloChange: {
+      b1: Math.round(
+        (teamBleu[0]?.elo || 2000) - (teamBleu[0]?.oldElo || 2000),
+      ),
+      b2: Math.round(
+        (teamBleu[1]?.elo || 2000) - (teamBleu[1]?.oldElo || 2000),
+      ),
+      r1: Math.round(
+        (teamRouge[0]?.elo || 2000) - (teamRouge[0]?.oldElo || 2000),
+      ),
+      r2: Math.round(
+        (teamRouge[1]?.elo || 2000) - (teamRouge[1]?.oldElo || 2000),
+      ),
+    },
 
-  // 🔥 DIFF
-  eloChange: {
-    b1: Math.round((teamBleu[0]?.elo || 2000) - (teamBleu[0]?.oldElo || 2000)),
-    b2: Math.round((teamBleu[1]?.elo || 2000) - (teamBleu[1]?.oldElo || 2000)),
-    r1: Math.round((teamRouge[0]?.elo || 2000) - (teamRouge[0]?.oldElo || 2000)),
-    r2: Math.round((teamRouge[1]?.elo || 2000) - (teamRouge[1]?.oldElo || 2000)),
-  },
-
-  debug: simulationResult
-};
+    debug: simulationResult,
+  };
 }
 
 // =========================
@@ -1072,19 +1049,15 @@ async function updatePlayerStats(match) {
 // =========================
 
 window.loadMatches = async function () {
-
   const list = document.getElementById("matchHistory");
   if (!list) return;
 
   list.innerHTML = "";
 
   const selectedPlayer =
-    document.getElementById("historyPlayerFilter")
-      ?.value
-      ?.toLowerCase() || "";
+    document.getElementById("historyPlayerFilter")?.value?.toLowerCase() || "";
 
   if (!selectedPlayer) {
-
     list.innerHTML = `
       <div style="
         padding:20px;
@@ -1101,20 +1074,16 @@ window.loadMatches = async function () {
   const resultFilter =
     document.getElementById("historyResultFilter")?.value || "";
 
-  const q = query(
-    collection(db, "matches"),
-    orderBy("createdAt", "desc")
-  );
+  const q = query(collection(db, "matches"), orderBy("createdAt", "desc"));
 
   const snapshot = await safeGetDocs(q);
 
-  snapshot.forEach(d => {
-
+  snapshot.forEach((d) => {
     const m = d.data();
 
     const players = [m.b1, m.b2, m.r1, m.r2]
-      .filter(p => p)
-      .map(p => p.toLowerCase());
+      .filter((p) => p)
+      .map((p) => p.toLowerCase());
 
     if (!players.includes(selectedPlayer)) return;
 
@@ -1150,20 +1119,17 @@ window.loadMatches = async function () {
     let date = "Date inconnue";
 
     if (m.createdAt?.seconds) {
-      date = new Date(m.createdAt.seconds * 1000)
-        .toLocaleDateString("fr-FR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "2-digit"
-        });
-
+      date = new Date(m.createdAt.seconds * 1000).toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+      });
     } else if (m.createdAtLocal) {
-      date = new Date(m.createdAtLocal)
-        .toLocaleDateString("fr-FR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "2-digit"
-        });
+      date = new Date(m.createdAtLocal).toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+      });
     }
 
     // =========================
@@ -1172,7 +1138,6 @@ window.loadMatches = async function () {
     let eloInfo = "";
 
     if (m.eloChange) {
-
       eloInfo = `
         <div style="
           display:grid;
@@ -1241,7 +1206,9 @@ window.loadMatches = async function () {
         📅 ${date}
       </div>
 
-      ${window.isAdmin ? `
+      ${
+        window.isAdmin
+          ? `
         <button
           onclick="deleteMatch('${d.id}')"
           style="
@@ -1258,7 +1225,9 @@ window.loadMatches = async function () {
         >
           🗑 Supprimer
         </button>
-      ` : ""}
+      `
+          : ""
+      }
     `;
 
     list.appendChild(li);
@@ -1276,7 +1245,7 @@ window.loadPlayersFilter = async function () {
 
   const snapshot = await safeGetDocs(collection(db, "players"));
 
-  snapshot.forEach(doc => {
+  snapshot.forEach((doc) => {
     const p = doc.data();
     const option = document.createElement("option");
     option.value = p.name;
@@ -1285,7 +1254,7 @@ window.loadPlayersFilter = async function () {
   });
 
   // 🔥 SYNCHRONISER AVEC LA TENDANCE
-  select.addEventListener("change", function() {
+  select.addEventListener("change", function () {
     const trendSelect = document.getElementById("trendPlayerFilter");
     if (trendSelect) {
       trendSelect.value = this.value;
@@ -1318,25 +1287,17 @@ window.loadComments = async function () {
   });
 };
 
-
 // =========================
 // Tournoi
 // =========================
-window.openTournamentTab = function (
-  tab
-) {
-
+window.openTournamentTab = function (tab) {
   // cache tout
-  document
-    .querySelectorAll(".tournament-tab")
-    .forEach(el => {
-      el.style.display = "none";
-    });
+  document.querySelectorAll(".tournament-tab").forEach((el) => {
+    el.style.display = "none";
+  });
 
   // ouvre bon onglet
-  document.getElementById(
-    `tournament-${tab}`
-  ).style.display = "block";
+  document.getElementById(`tournament-${tab}`).style.display = "block";
 
   // 🔥 gestion du menu selon l'onglet
   const menu = document.querySelector(".tournament-menu");
@@ -1347,7 +1308,6 @@ window.openTournamentTab = function (
     // Pour les autres onglets, montre le menu
     menu.style.display = "block";
   }
-
 };
 
 window.openTournament = async function (tournamentId) {
@@ -1356,9 +1316,9 @@ window.openTournament = async function (tournamentId) {
   // Montre le menu des onglets pour les tournois existants
   const menu = document.querySelector(".tournament-menu");
 
-if (menu) {
-  menu.style.display = "block";
-}
+  if (menu) {
+    menu.style.display = "block";
+  }
   openTournamentTab("matches");
   await loadTournamentMatches(tournamentId);
   await loadTournamentRanking(tournamentId);
@@ -1369,9 +1329,9 @@ window.openTournamentMatches = async function (tournamentId) {
   openModal("tournament");
   const menu = document.querySelector(".tournament-menu");
 
-if (menu) {
-  menu.style.display = "block";
-}
+  if (menu) {
+    menu.style.display = "block";
+  }
   openTournamentTab("matches");
   await loadTournamentMatches(tournamentId);
   await loadTournamentRanking(tournamentId);
@@ -1382,9 +1342,9 @@ window.openTournamentRankingView = async function (tournamentId) {
   openModal("tournament");
   const menu = document.querySelector(".tournament-menu");
 
-if (menu) {
-  menu.style.display = "block";
-}
+  if (menu) {
+    menu.style.display = "block";
+  }
   openTournamentTab("ranking");
   await loadTournamentRanking(tournamentId);
 };
@@ -1402,19 +1362,19 @@ window.lastTournamentCreation = 0;
 // =========================
 // 🎛️ UPDATE TEAM MODE UI
 // =========================
-window.updateTeamModeUI = function() {
+window.updateTeamModeUI = function () {
   const teamMode = document.getElementById("teamMode").value;
   const manualSection = document.getElementById("manualTeamSection");
-  
+
   if (teamMode === "manual") {
     manualSection.style.display = "block";
     window.manualTeamCount = 0;
     document.getElementById("manualTeamContainer").innerHTML = "";
-    
+
     // Ajouter 2 équipes par défaut
     addManualTeam();
     addManualTeam();
-    
+
     loadPlayersSelect();
   } else {
     manualSection.style.display = "none";
@@ -1424,16 +1384,16 @@ window.updateTeamModeUI = function() {
 // =========================
 // ➕ AJOUTER UNE ÉQUIPE MANUELLE
 // =========================
-window.addManualTeam = function() {
+window.addManualTeam = function () {
   if (!window.manualTeamCount) {
     window.manualTeamCount = 0;
   }
-  
+
   window.manualTeamCount++;
   const teamId = window.manualTeamCount;
-  
+
   const container = document.getElementById("manualTeamContainer");
-  
+
   const teamDiv = document.createElement("div");
   teamDiv.id = `team-${teamId}`;
   teamDiv.style.marginBottom = "20px";
@@ -1441,12 +1401,12 @@ window.addManualTeam = function() {
   teamDiv.style.border = "1px solid #cbd5e1";
   teamDiv.style.borderRadius = "8px";
   teamDiv.style.backgroundColor = "rgba(255,255,255,0.5)";
-  
+
   let removeBtn = "";
   if (window.manualTeamCount > 2) {
     removeBtn = `<button type="button" onclick="removeManualTeam(${teamId})" class="btn-danger" style="margin-top: 10px; width: 100%; max-width: 150px;">Supprimer</button>`;
   }
-  
+
   teamDiv.innerHTML = `
     <h5 style="margin-top: 0; color: #1e293b;">⚽ Équipe ${teamId}</h5>
     
@@ -1465,9 +1425,9 @@ window.addManualTeam = function() {
     
     ${removeBtn}
   `;
-  
+
   container.appendChild(teamDiv);
-  
+
   // Remplir les sélecteurs avec les joueurs
   loadPlayersForTeam(teamId);
 };
@@ -1475,7 +1435,7 @@ window.addManualTeam = function() {
 // =========================
 // ➖ SUPPRIMER UNE ÉQUIPE MANUELLE
 // =========================
-window.removeManualTeam = function(teamId) {
+window.removeManualTeam = function (teamId) {
   const teamDiv = document.getElementById(`team-${teamId}`);
   if (teamDiv) {
     teamDiv.remove();
@@ -1485,25 +1445,25 @@ window.removeManualTeam = function(teamId) {
 // =========================
 // 🎯 CHARGER JOUEURS POUR UNE ÉQUIPE
 // =========================
-window.loadPlayersForTeam = async function(teamId) {
+window.loadPlayersForTeam = async function (teamId) {
   const snapshot = await safeGetDocs(collection(db, "players"));
   const select1 = document.getElementById(`teamPlayer1-${teamId}`);
   const select2 = document.getElementById(`teamPlayer2-${teamId}`);
-  
+
   if (!select1 || !select2) return;
-  
+
   select1.innerHTML = "<option value=''>-- choisir --</option>";
   select2.innerHTML = "<option value=''>-- choisir --</option>";
-  
-  snapshot.forEach(doc => {
+
+  snapshot.forEach((doc) => {
     const p = doc.data();
-    
+
     // Ajouter à select1
     const option1 = document.createElement("option");
     option1.value = p.name;
     option1.textContent = p.name;
     select1.appendChild(option1);
-    
+
     // Ajouter à select2
     const option2 = document.createElement("option");
     option2.value = p.name;
@@ -1513,13 +1473,16 @@ window.loadPlayersForTeam = async function(teamId) {
 };
 
 window.createTournament = async function () {
-
   try {
     const name = document.getElementById("tournamentName")?.value?.trim();
     const mode = document.getElementById("tournamentMode")?.value;
     const doubleRound = document.getElementById("doubleRound")?.checked;
-    const winPoints = parseInt(document.getElementById("winPoints")?.value || 3);
-    const lossPoints = parseInt(document.getElementById("lossPoints")?.value || 0);
+    const winPoints = parseInt(
+      document.getElementById("winPoints")?.value || 3,
+    );
+    const lossPoints = parseInt(
+      document.getElementById("lossPoints")?.value || 0,
+    );
     const offBonus = parseInt(document.getElementById("offBonus")?.value || 1);
     const defBonus = parseInt(document.getElementById("defBonus")?.value || 1);
 
@@ -1531,20 +1494,17 @@ window.createTournament = async function () {
     // =========================
     // 🏆 CREATE TOURNAMENT
     // =========================
-    const tournamentRef = await safeAddDoc(
-      collection(db, "tournaments"),
-      {
-        name,
-        mode,
-        doubleRound,
-        winPoints,
-        lossPoints,
-        offBonus,
-        defBonus,
-        createdAt: serverTimestamp(),
-        status: "waiting"
-      }
-    );
+    const tournamentRef = await safeAddDoc(collection(db, "tournaments"), {
+      name,
+      mode,
+      doubleRound,
+      winPoints,
+      lossPoints,
+      offBonus,
+      defBonus,
+      createdAt: serverTimestamp(),
+      status: "waiting",
+    });
 
     let manualTeamsData = null;
 
@@ -1552,13 +1512,11 @@ window.createTournament = async function () {
     // 👥 MODE MANUAL
     // =========================
     if (mode === "manual") {
-
       manualTeamsData = [];
       const teamDivs = document.querySelectorAll("#manualTeamContainer > div");
       const usedPlayers = new Set();
 
       teamDivs.forEach((teamDiv, index) => {
-
         const realId = teamDiv.id.replace("team-", "");
 
         const nameInput = document.getElementById(`teamName-${realId}`);
@@ -1587,7 +1545,7 @@ window.createTournament = async function () {
         manualTeamsData.push({
           teamName,
           player1,
-          player2
+          player2,
         });
       });
 
@@ -1600,16 +1558,9 @@ window.createTournament = async function () {
     // =========================
     // ⚙️ GENERATION
     // =========================
-    await generateTeams(
-      tournamentRef.id,
-      mode,
-      manualTeamsData
-    );
+    await generateTeams(tournamentRef.id, mode, manualTeamsData);
 
-    await generateMatches(
-      tournamentRef.id,
-      doubleRound
-    );
+    await generateMatches(tournamentRef.id, doubleRound);
 
     // =========================
     // 🔁 REFRESH UI
@@ -1624,28 +1575,22 @@ window.createTournament = async function () {
 
     const input = document.getElementById("tournamentName");
     if (input) input.value = "";
-
   } catch (e) {
     console.error("createTournament error:", e);
     alert("Erreur création tournoi");
   }
 };
 
-
 window.generateTeams = async function (tournamentId, mode, manualTeamsData) {
-
-  const snapshot =
-    await safeGetDocs(collection(db, "players"));
+  const snapshot = await safeGetDocs(collection(db, "players"));
 
   let players = [];
 
-  snapshot.forEach(doc => {
-
+  snapshot.forEach((doc) => {
     players.push({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
     });
-
   });
 
   // =========================
@@ -1653,8 +1598,7 @@ window.generateTeams = async function (tournamentId, mode, manualTeamsData) {
   // =========================
 
   if (mode === "manual" && manualTeamsData && Array.isArray(manualTeamsData)) {
-    
-    let teams = manualTeamsData.map(team => ({
+    let teams = manualTeamsData.map((team) => ({
       player1: team.player1,
       player2: team.player2 || "",
       teamName: team.teamName,
@@ -1663,18 +1607,13 @@ window.generateTeams = async function (tournamentId, mode, manualTeamsData) {
       losses: 0,
       goalsFor: 0,
       goalsAgainst: 0,
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
     }));
 
     for (const team of teams) {
       await safeAddDoc(
-        collection(
-          db,
-          "tournaments",
-          tournamentId,
-          "teams"
-        ),
-        team
+        collection(db, "tournaments", tournamentId, "teams"),
+        team,
       );
     }
 
@@ -1692,38 +1631,31 @@ window.generateTeams = async function (tournamentId, mode, manualTeamsData) {
   // =========================
 
   if (mode === "random") {
-
-  for (let i = players.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [players[i], players[j]] = [players[j], players[i]];
+    for (let i = players.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [players[i], players[j]] = [players[j], players[i]];
+    }
   }
-
-}
 
   // =========================
   // ⚖️ MODE ELO
   // =========================
 
   if (mode === "elo") {
-
     // trie du plus fort au plus faible
-    players.sort((a, b) =>
-      (b.elo || 2000) - (a.elo || 2000));
+    players.sort((a, b) => (b.elo || 2000) - (a.elo || 2000));
 
     let balanced = [];
 
     while (players.length > 1) {
-
       const strong = players.shift();
       const weak = players.pop();
 
       balanced.push(strong);
       balanced.push(weak);
-
     }
 
     players = balanced;
-
   }
 
   // =========================
@@ -1733,7 +1665,6 @@ window.generateTeams = async function (tournamentId, mode, manualTeamsData) {
   let teams = [];
 
   for (let i = 0; i < players.length; i += 2) {
-
     if (!players[i + 1]) break;
 
     teams.push({
@@ -1745,9 +1676,8 @@ window.generateTeams = async function (tournamentId, mode, manualTeamsData) {
       losses: 0,
       goalsFor: 0,
       goalsAgainst: 0,
-  createdAt: serverTimestamp()
-});
-
+      createdAt: serverTimestamp(),
+    });
   }
 
   // =========================
@@ -1755,64 +1685,45 @@ window.generateTeams = async function (tournamentId, mode, manualTeamsData) {
   // =========================
 
   for (const team of teams) {
-
     await safeAddDoc(
-      collection(
-        db,
-        "tournaments",
-        tournamentId,
-        "teams"
-      ),
-      team
+      collection(db, "tournaments", tournamentId, "teams"),
+      team,
     );
-
   }
 
   console.log("👥 Équipes créées :", teams);
-
 };
 
 window.loadTournaments = async function () {
+  const activeContainer = document.getElementById("activeTournaments");
+  const recentContainer = document.getElementById("recentTournaments");
+  const historyContainer = document.getElementById("finishedTournaments");
 
-  const activeContainer =
-    document.getElementById("activeTournaments");
-  const recentContainer =
-    document.getElementById("recentTournaments");
-  const historyContainer =
-    document.getElementById("finishedTournaments");
-
-  [activeContainer, recentContainer, historyContainer].forEach(c => {
+  [activeContainer, recentContainer, historyContainer].forEach((c) => {
     if (c) c.innerHTML = "";
   });
 
-  const snapshot = await safeGetDocs(
-    collection(db, "tournaments")
-  );
+  const snapshot = await safeGetDocs(collection(db, "tournaments"));
 
   if (snapshot.empty) {
-
     if (activeContainer)
       activeContainer.innerHTML = "<p>Aucun tournoi en cours</p>";
     if (recentContainer)
       recentContainer.innerHTML = "<p>Aucun podium récent</p>";
-    if (historyContainer)
-      historyContainer.innerHTML = "<p>Aucun tournoi</p>";
+    if (historyContainer) historyContainer.innerHTML = "<p>Aucun tournoi</p>";
 
     return;
-
   }
 
   const now = Date.now();
   const recentThreshold = 48 * 60 * 60 * 1000;
 
-  snapshot.forEach(docSnap => {
-
+  snapshot.forEach((docSnap) => {
     const t = docSnap.data();
     const finishedAt = getTimestampDate(t.finishedAt);
     const isFinished = t.status === "finished";
     const isRecent =
-      isFinished && finishedAt &&
-      now - finishedAt.getTime() <= recentThreshold;
+      isFinished && finishedAt && now - finishedAt.getTime() <= recentThreshold;
 
     const card = document.createElement("div");
     card.classList.add("match-card");
@@ -1831,15 +1742,9 @@ window.loadTournaments = async function () {
       return;
     }
 
-    const modeText =
-      t.mode === "elo"
-        ? "⚖️ Mode ELO"
-        : "🔀 Mode aléatoire";
+    const modeText = t.mode === "elo" ? "⚖️ Mode ELO" : "🔀 Mode aléatoire";
 
-    const roundText =
-      t.doubleRound
-        ? "🔁 Aller / retour"
-        : "➡️ Match simple";
+    const roundText = t.doubleRound ? "🔁 Aller / retour" : "➡️ Match simple";
 
     card.innerHTML = `
       <h4>🏆 ${t.name}</h4>
@@ -1857,7 +1762,6 @@ window.loadTournaments = async function () {
 
     const target = isRecent ? recentContainer : activeContainer;
     if (target) target.appendChild(card);
-
   });
 
   if (activeContainer && !activeContainer.childNodes.length) {
@@ -1869,33 +1773,21 @@ window.loadTournaments = async function () {
   if (historyContainer && !historyContainer.childNodes.length) {
     historyContainer.innerHTML = "<p>Aucun tournoi</p>";
   }
-
 };
 
-window.generateMatches = async function (
-  tournamentId,
-  doubleRound
-) {
-
+window.generateMatches = async function (tournamentId, doubleRound) {
   // récupère équipes
   const snapshot = await safeGetDocs(
-    collection(
-      db,
-      "tournaments",
-      tournamentId,
-      "teams"
-    )
+    collection(db, "tournaments", tournamentId, "teams"),
   );
 
   let teams = [];
 
-  snapshot.forEach(doc => {
-
+  snapshot.forEach((doc) => {
     teams.push({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
     });
-
   });
 
   let matches = [];
@@ -1906,45 +1798,35 @@ window.generateMatches = async function (
   // =========================
 
   for (let i = 0; i < teams.length; i++) {
-
     for (let j = i + 1; j < teams.length; j++) {
-
       // match normal
       matches.push({
         blueTeamId: teams[i].id,
-blueTeamName:
-`${teams[i].player1}/${teams[i].player2}`,
+        blueTeamName: `${teams[i].player1}/${teams[i].player2}`,
 
-redTeamId: teams[j].id,
-redTeamName:
-`${teams[j].player1}/${teams[j].player2}`,
+        redTeamId: teams[j].id,
+        redTeamName: `${teams[j].player1}/${teams[j].player2}`,
         sb: null,
         sr: null,
         played: false,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
       });
 
       // aller / retour
       if (doubleRound) {
-
         matches.push({
           blueTeamId: teams[j].id,
-blueTeamName:
-`${teams[j].player1}/${teams[j].player2}`,
+          blueTeamName: `${teams[j].player1}/${teams[j].player2}`,
 
-redTeamId: teams[i].id,
-redTeamName:
-`${teams[i].player1}/${teams[i].player2}`,
+          redTeamId: teams[i].id,
+          redTeamName: `${teams[i].player1}/${teams[i].player2}`,
           sb: null,
           sr: null,
           played: false,
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
         });
-
       }
-
     }
-
   }
 
   // =========================
@@ -1952,56 +1834,33 @@ redTeamName:
   // =========================
 
   for (const match of matches) {
-
     await safeAddDoc(
-      collection(
-        db,
-        "tournaments",
-        tournamentId,
-        "matches"
-      ),
-      match
+      collection(db, "tournaments", tournamentId, "matches"),
+      match,
     );
-
   }
 
   console.log("⚔️ Matchs générés :", matches);
-
 };
 
-window.loadTournamentMatches = async function (
-  tournamentId
-) {
-
-  const container =
-    document.getElementById(
-      "tournamentMatches"
-    );
+window.loadTournamentMatches = async function (tournamentId) {
+  const container = document.getElementById("tournamentMatches");
 
   if (!container) return;
 
   container.innerHTML = "";
 
   const snapshot = await safeGetDocs(
-    collection(
-      db,
-      "tournaments",
-      tournamentId,
-      "matches"
-    )
+    collection(db, "tournaments", tournamentId, "matches"),
   );
 
   if (snapshot.empty) {
-
-    container.innerHTML =
-      "<p>Aucun match</p>";
+    container.innerHTML = "<p>Aucun match</p>";
 
     return;
-
   }
 
-  snapshot.forEach(docSnap => {
-
+  snapshot.forEach((docSnap) => {
     const match = docSnap.data();
 
     // ignore matchs déjà joués
@@ -2009,8 +1868,7 @@ window.loadTournamentMatches = async function (
       return;
     }
 
-    const div =
-      document.createElement("div");
+    const div = document.createElement("div");
 
     div.classList.add("match-card");
 
@@ -2075,172 +1933,120 @@ window.loadTournamentMatches = async function (
       </div>
 
       <button
-        class="save-score-btn"
-        onclick="saveTournamentMatch(
-          '${tournamentId}',
-          '${docSnap.id}'
-        )"
-      >
-        Enregistrer
-      </button>
+  id="save-btn-${docSnap.id}"
+  class="save-score-btn"
+  onclick="saveTournamentMatch(
+    '${tournamentId}',
+    '${docSnap.id}')">
+  Enregistrer
+</button>
 
     `;
 
     container.appendChild(div);
-
   });
-
 };
 
-window.saveTournamentMatch = async function (
-  tournamentId,
-  matchId
-) {
+window.saveTournamentMatch = async function (tournamentId, matchId) {
+  const button = document.getElementById(`save-btn-${matchId}`);
 
-  const sb = parseInt(
-    document.getElementById(
-      `sb-${matchId}`
-    ).value
-  );
+  if (!button) return;
 
-  const sr = parseInt(
-    document.getElementById(
-      `sr-${matchId}`
-    ).value
-  );
+  const resetButton = () => {
+    button.disabled = false;
+    button.textContent = "Enregistrer";
+    button.style.opacity = "1";
+    button.style.cursor = "pointer";
+    button.style.background = "";
+  };
 
-  // =========================
-  // 🔒 VALIDATION
-  // =========================
+  const lockButton = () => {
+    button.disabled = true;
+    button.textContent = "Enregistrement...";
+    button.style.opacity = "0.6";
+    button.style.cursor = "not-allowed";
+  };
 
-  if (isNaN(sb) || isNaN(sr)) {
+  const getScore = (id) => parseInt(document.getElementById(id)?.value);
 
-    alert("Score invalide");
+  if (button.disabled) return;
 
-    return;
+  lockButton();
 
-  }
+  const sb = getScore(`sb-${matchId}`);
+  const sr = getScore(`sr-${matchId}`);
 
-  // interdit égalité
-  if (sb === sr) {
+  try {
+    // =========================
+    // VALIDATION
+    // =========================
 
-    alert("Match nul interdit");
+    if ([sb, sr].some((v) => isNaN(v))) {
+      alert("Score invalide");
+      return;
+    }
 
-    return;
+    if (sb === sr) {
+      alert("Match nul interdit");
+      return;
+    }
 
-  }
+    if (sb < 0 || sr < 0 || sb > 10 || sr > 10) {
+      alert("Les scores doivent être entre 0 et 10");
+      return;
+    }
 
-  // score min/max
-  if (
-    sb < 0 ||
-    sr < 0 ||
-    sb > 10 ||
-    sr > 10
-  ) {
+    if (sb !== 10 && sr !== 10) {
+      alert("Le gagnant doit avoir 10");
+      return;
+    }
 
-    alert(
-      "Les scores doivent être entre 0 et 10"
-    );
+    if (sb === 10 && sr === 10) {
+      alert("Score impossible");
+      return;
+    }
 
-    return;
+    // =========================
+    // FIREBASE
+    // =========================
 
-  }
+    const matchRef = doc(db, "tournaments", tournamentId, "matches", matchId);
+    const matchSnap = await getDoc(matchRef);
 
-  // gagnant obligatoire
-  if (
-    sb !== 10 &&
-    sr !== 10
-  ) {
+    const match = matchSnap.data();
 
-    alert(
-      "Le gagnant doit avoir 10"
-    );
+    if (match?.played) {
+      button.textContent = "✅ Déjà enregistré";
+      button.style.background = "#16a34a";
+      return;
+    }
 
-    return;
-
-  }
-
-  // impossible
-  if (
-    sb === 10 &&
-    sr === 10
-  ) {
-
-    alert("Score impossible");
-
-    return;
-
-  }
-
-  // =========================
-  // 🔥 RÉCUP MATCH
-  // =========================
-
-  const matchRef = doc(
-    db,
-    "tournaments",
-    tournamentId,
-    "matches",
-    matchId
-  );
-
-  const matchDoc =
-    await getDoc(matchRef);
-
-  const existingMatch =
-    matchDoc.data();
-
-  // déjà joué
-  if (existingMatch.played) {
-
-    alert("Match déjà enregistré");
-
-    return;
-
-  }
-
-  // =========================
-  // 💾 SAVE MATCH
-  // =========================
-
-  await safeUpdateDoc(
-    matchRef,
-    {
+    await safeUpdateDoc(matchRef, {
       sb,
       sr,
       played: true,
-      type: "tournament"
-    }
-  );
+      type: "tournament",
+    });
 
-  // =========================
-  // 🏆 UPDATE CLASSEMENT
-  // =========================
-
-  await updateTournamentRanking(
-    tournamentId,
-    {
+    await updateTournamentRanking(tournamentId, {
       id: matchId,
-      ...existingMatch,
+      ...match,
       sb,
-      sr
-    }   
-  );
+      sr,
+    });
 
-  // refresh liste matchs
-  await loadTournamentMatches(
-    tournamentId
-  );
+    await loadTournamentMatches(tournamentId);
 
-  alert("✅ Score enregistré");
-
+    alert("✅ Score enregistré");
+  } catch (err) {
+    console.error("saveTournamentMatch error:", err);
+    alert("Erreur enregistrement");
+  } finally {
+    resetButton();
+  }
 };
 
-window.updateTournamentRanking = async function (
-  tournamentId,
-  match
-) {
-
+window.updateTournamentRanking = async function (tournamentId, match) {
   // 🚫 sécurité : ne traiter que les matchs tournoi
   if (match.type === "classic") {
     console.log("🚫 Match classique ignoré dans tournoi");
@@ -2251,9 +2057,7 @@ window.updateTournamentRanking = async function (
   // RÉCUP TOURNOI
   // =========================
 
-  const tournamentDoc = await getDoc(
-    doc(db, "tournaments", tournamentId)
-  );
+  const tournamentDoc = await getDoc(doc(db, "tournaments", tournamentId));
 
   const tournament = tournamentDoc.data();
 
@@ -2273,16 +2077,16 @@ window.updateTournamentRanking = async function (
   // =========================
 
   const teamsSnapshot = await safeGetDocs(
-    collection(db, "tournaments", tournamentId, "teams")
+    collection(db, "tournaments", tournamentId, "teams"),
   );
 
   let teams = [];
 
-  teamsSnapshot.forEach(docSnap => {
+  teamsSnapshot.forEach((docSnap) => {
     teams.push({
       id: docSnap.id,
       ref: docSnap.ref,
-      ...docSnap.data()
+      ...docSnap.data(),
     });
   });
 
@@ -2290,13 +2094,9 @@ window.updateTournamentRanking = async function (
   // TROUVER LES 2 ÉQUIPES
   // =========================
 
-  const blueTeam = teams.find(
-    team => team.id === match.blueTeamId
-  );
+  const blueTeam = teams.find((team) => team.id === match.blueTeamId);
 
-  const redTeam = teams.find(
-    team => team.id === match.redTeamId
-  );
+  const redTeam = teams.find((team) => team.id === match.redTeamId);
 
   if (!blueTeam || !redTeam) {
     console.error("Équipes introuvables");
@@ -2355,27 +2155,21 @@ window.updateTournamentRanking = async function (
   // SAVE
   // =========================
 
-  await safeUpdateDoc(
-    blueTeam.ref,
-    {
-      points: blueTeam.points,
-      wins: blueTeam.wins,
-      losses: blueTeam.losses,
-      goalsFor: blueTeam.goalsFor,
-      goalsAgainst: blueTeam.goalsAgainst
-    }
-  );
+  await safeUpdateDoc(blueTeam.ref, {
+    points: blueTeam.points,
+    wins: blueTeam.wins,
+    losses: blueTeam.losses,
+    goalsFor: blueTeam.goalsFor,
+    goalsAgainst: blueTeam.goalsAgainst,
+  });
 
-  await safeUpdateDoc(
-    redTeam.ref,
-    {
-      points: redTeam.points,
-      wins: redTeam.wins,
-      losses: redTeam.losses,
-      goalsFor: redTeam.goalsFor,
-      goalsAgainst: redTeam.goalsAgainst
-    }
-  );
+  await safeUpdateDoc(redTeam.ref, {
+    points: redTeam.points,
+    wins: redTeam.wins,
+    losses: redTeam.losses,
+    goalsFor: redTeam.goalsFor,
+    goalsAgainst: redTeam.goalsAgainst,
+  });
 
   // =========================
   // REFRESH UI
@@ -2384,14 +2178,9 @@ window.updateTournamentRanking = async function (
   await loadTournamentRanking(tournamentId);
   await checkTournamentFinished(tournamentId);
 };
-window.loadTournamentRanking = async function (
-  tournamentId
-) {
 
-  const tbody =
-    document.getElementById(
-      "tournamentRanking"
-    );
+window.loadTournamentRanking = async function (tournamentId) {
+  const tbody = document.getElementById("tournamentRanking");
 
   if (!tbody) return;
 
@@ -2402,23 +2191,16 @@ window.loadTournamentRanking = async function (
   // =========================
 
   const snapshot = await safeGetDocs(
-    collection(
-      db,
-      "tournaments",
-      tournamentId,
-      "teams"
-    )
+    collection(db, "tournaments", tournamentId, "teams"),
   );
 
   let teams = [];
 
-  snapshot.forEach(docSnap => {
-
+  snapshot.forEach((docSnap) => {
     teams.push({
       id: docSnap.id,
-      ...docSnap.data()
+      ...docSnap.data(),
     });
-
   });
 
   // =========================
@@ -2426,18 +2208,15 @@ window.loadTournamentRanking = async function (
   // =========================
 
   teams.sort((a, b) => {
-
     // points
     if (b.points !== a.points) {
       return b.points - a.points;
     }
 
     // différence buts
-    const diffA =
-      a.goalsFor - a.goalsAgainst;
+    const diffA = a.goalsFor - a.goalsAgainst;
 
-    const diffB =
-      b.goalsFor - b.goalsAgainst;
+    const diffB = b.goalsFor - b.goalsAgainst;
 
     if (diffB !== diffA) {
       return diffB - diffA;
@@ -2445,19 +2224,14 @@ window.loadTournamentRanking = async function (
 
     // buts marqués
     return b.goalsFor - a.goalsFor;
-
   });
 
-  const winnerBox =
-  document.getElementById(
-    "tournamentWinner"
-  );
+  const winnerBox = document.getElementById("tournamentWinner");
 
-if (winnerBox && teams.length > 0) {
+  if (winnerBox && teams.length > 0) {
+    const winner = teams[0];
 
-  const winner = teams[0];
-
-  winnerBox.innerHTML = `
+    winnerBox.innerHTML = `
 
     <div class="winner-card">
 
@@ -2478,19 +2252,15 @@ if (winnerBox && teams.length > 0) {
     </div>
 
   `;
-
-}
+  }
   // =========================
   // AFFICHAGE
   // =========================
 
   teams.forEach((team, index) => {
+    const tr = document.createElement("tr");
 
-    const tr =
-      document.createElement("tr");
-
-    const diff =
-      team.goalsFor - team.goalsAgainst;
+    const diff = team.goalsFor - team.goalsAgainst;
 
     tr.innerHTML = `
     
@@ -2519,18 +2289,16 @@ if (winnerBox && teams.length > 0) {
     `;
 
     tbody.appendChild(tr);
-
   });
-
 };
 
 window.storeTournamentWinner = async function (tournamentId) {
   const snapshot = await safeGetDocs(
-    collection(db, "tournaments", tournamentId, "teams")
+    collection(db, "tournaments", tournamentId, "teams"),
   );
 
   let teams = [];
-  snapshot.forEach(docSnap => {
+  snapshot.forEach((docSnap) => {
     teams.push({ id: docSnap.id, ...docSnap.data() });
   });
 
@@ -2551,31 +2319,22 @@ window.storeTournamentWinner = async function (tournamentId) {
   const winnerName = `${winner.player1}/${winner.player2}`;
 
   await safeUpdateDoc(doc(db, "tournaments", tournamentId), {
-    winnerName
+    winnerName,
   });
 
   return winnerName;
 };
 
-window.checkTournamentFinished = async function (
-  tournamentId
-) {
-
+window.checkTournamentFinished = async function (tournamentId) {
   // récup matchs
   const snapshot = await safeGetDocs(
-    collection(
-      db,
-      "tournaments",
-      tournamentId,
-      "matches"
-    )
+    collection(db, "tournaments", tournamentId, "matches"),
   );
 
   let total = 0;
   let played = 0;
 
-  snapshot.forEach(docSnap => {
-
+  snapshot.forEach((docSnap) => {
     total++;
 
     const match = docSnap.data();
@@ -2583,42 +2342,23 @@ window.checkTournamentFinished = async function (
     if (match.played) {
       played++;
     }
-
   });
 
   // tournoi terminé
   if (total > 0 && total === played) {
+    const winnerName = await storeTournamentWinner(tournamentId);
 
-    const winnerName = await storeTournamentWinner(
-      tournamentId
-    );
+    await safeUpdateDoc(doc(db, "tournaments", tournamentId), {
+      status: "finished",
+      finishedAt: serverTimestamp(),
+      winnerName,
+    });
 
-    await safeUpdateDoc(
-      doc(
-        db,
-        "tournaments",
-        tournamentId
-      ),
-      {
-        status: "finished",
-        finishedAt: serverTimestamp(),
-        winnerName
-      }
-    );
-
-    alert(
-      `🏆 Tournoi terminé !${
-        winnerName ? ` Podium : ${winnerName}` : ""
-      }`
-    );
+    alert(`🏆 Tournoi terminé !${winnerName ? ` Podium : ${winnerName}` : ""}`);
 
     // récup classement final
-    await loadTournamentRanking(
-      tournamentId
-    );
-
+    await loadTournamentRanking(tournamentId);
   }
-
 };
 
 // =========================
@@ -2627,7 +2367,6 @@ window.checkTournamentFinished = async function (
 
 // 🔥 Charger les joueurs dans le select Tendance
 window.loadPlayersTrendFilter = async function () {
-
   const select1 = document.getElementById("trendPlayerFilter");
   const select2 = document.getElementById("trendPlayerFilter2");
 
@@ -2638,7 +2377,7 @@ window.loadPlayersTrendFilter = async function () {
 
   const snapshot = await safeGetDocs(collection(db, "players"));
 
-  snapshot.forEach(doc => {
+  snapshot.forEach((doc) => {
     const p = doc.data();
 
     const option1 = document.createElement("option");
@@ -2656,17 +2395,17 @@ window.loadPlayersTrendFilter = async function () {
 
 // 🔥 Charger l'historique ELO d'un joueur et afficher le graphique
 window.loadPlayerEloTrend = async function () {
-
   const p1 = document.getElementById("trendPlayerFilter")?.value?.toLowerCase();
-  const p2 = document.getElementById("trendPlayerFilter2")?.value?.toLowerCase();
+
+  const p2 = document
+    .getElementById("trendPlayerFilter2")
+    ?.value?.toLowerCase();
 
   if (!p1 && !p2) return;
 
   const q = query(collection(db, "matches"), orderBy("createdAt", "asc"));
-  const snapshot = await safeGetDocs(q);
 
-  let elo1 = 2000;
-  let elo2 = 2000;
+  const snapshot = await safeGetDocs(q);
 
   const history1 = [];
   const history2 = [];
@@ -2674,57 +2413,60 @@ window.loadPlayerEloTrend = async function () {
 
   let step = 0;
 
-  snapshot.forEach(d => {
+  snapshot.forEach((d) => {
     const m = d.data();
 
-    // ignorer match non joué
-    if (!m.played && m.sb == null) return;
+    // ignore matchs invalides
+    if (!m.eloAfter) return;
 
-    const b1 = m.b1?.toLowerCase();
-    const b2 = m.b2?.toLowerCase();
-    const r1 = m.r1?.toLowerCase();
-    const r2 = m.r2?.toLowerCase();
-
-    const blueWin = m.sb > m.sr;
-    const redWin = m.sr > m.sb;
+    const players = {
+      b1: m.b1?.toLowerCase(),
+      b2: m.b2?.toLowerCase(),
+      r1: m.r1?.toLowerCase(),
+      r2: m.r2?.toLowerCase(),
+    };
 
     let changed = false;
 
     // =========================
     // JOUEUR 1
     // =========================
-    if (p1 && (b1 === p1 || b2 === p1 || r1 === p1 || r2 === p1)) {
-
-      const isBlue = (b1 === p1 || b2 === p1);
-
-      const change = isBlue
-        ? (blueWin ? 1 : -1)
-        : (redWin ? 1 : -1);
-
-      elo1 += change;
-      history1.push(elo1);
-
-      changed = true;
+    if (p1) {
+      if (players.b1 === p1) {
+        history1.push(m.eloAfter.b1);
+        changed = true;
+      } else if (players.b2 === p1) {
+        history1.push(m.eloAfter.b2);
+        changed = true;
+      } else if (players.r1 === p1) {
+        history1.push(m.eloAfter.r1);
+        changed = true;
+      } else if (players.r2 === p1) {
+        history1.push(m.eloAfter.r2);
+        changed = true;
+      }
     }
 
     // =========================
     // JOUEUR 2
     // =========================
-    if (p2 && (b1 === p2 || b2 === p2 || r1 === p2 || r2 === p2)) {
-
-      const isBlue = (b1 === p2 || b2 === p2);
-
-      const change = isBlue
-        ? (blueWin ? 1 : -1)
-        : (redWin ? 1 : -1);
-
-      elo2 += change;
-      history2.push(elo2);
-
-      changed = true;
+    if (p2) {
+      if (players.b1 === p2) {
+        history2.push(m.eloAfter.b1);
+        changed = true;
+      } else if (players.b2 === p2) {
+        history2.push(m.eloAfter.b2);
+        changed = true;
+      } else if (players.r1 === p2) {
+        history2.push(m.eloAfter.r1);
+        changed = true;
+      } else if (players.r2 === p2) {
+        history2.push(m.eloAfter.r2);
+        changed = true;
+      }
     }
 
-    // 🔥 on n’ajoute un label QUE si match utile
+    // label seulement si utile
     if (changed) {
       step++;
       labels.push(`M${step}`);
@@ -2732,64 +2474,112 @@ window.loadPlayerEloTrend = async function () {
   });
 
   const ctx = document.getElementById("eloChart")?.getContext("2d");
+
   if (!ctx) return;
 
+  // destroy ancien chart
   if (window.eloChartInstance) {
     window.eloChartInstance.destroy();
   }
 
   const datasets = [];
 
+  // =========================
+  // DATASET P1
+  // =========================
   if (p1) {
     datasets.push({
       label: p1,
       data: history1,
       borderColor: "#3b82f6",
-      backgroundColor: "rgba(59,130,246,0.15)",
+      backgroundColor: "rgba(59,130,246,0.12)",
+      borderWidth: 3,
       tension: 0.35,
-      pointRadius: 3,
-      fill: true
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      fill: true,
     });
   }
 
+  // =========================
+  // DATASET P2
+  // =========================
   if (p2) {
     datasets.push({
       label: p2,
       data: history2,
       borderColor: "#ef4444",
-      backgroundColor: "rgba(239,68,68,0.15)",
+      backgroundColor: "rgba(239,68,68,0.12)",
+      borderWidth: 3,
       tension: 0.35,
-      pointRadius: 3,
-      fill: true
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      fill: true,
     });
   }
 
+  // =========================
+  // CHART
+  // =========================
   window.eloChartInstance = new Chart(ctx, {
     type: "line",
-    data: { labels, datasets },
+
+    data: {
+      labels,
+      datasets,
+    },
+
     options: {
       responsive: true,
       maintainAspectRatio: false,
+
+      interaction: {
+        mode: "index",
+        intersect: false,
+      },
+
       plugins: {
-        legend: { display: true }
-      }
-    }
+        legend: {
+          display: true,
+        },
+
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return `ELO : ${context.parsed.y}`;
+            },
+          },
+        },
+      },
+
+      scales: {
+        y: {
+          beginAtZero: false,
+
+          ticks: {
+            callback: function (value) {
+              return value;
+            },
+          },
+        },
+      },
+    },
   });
 };
+
 // =========================
 // �🚀 INIT
 // =========================
 document.addEventListener("DOMContentLoaded", () => {
-
   // 🔥 MODE TEST VISUEL
   if (window.APP_MODE === "test") {
     document.body.style.border = "5px solid red";
   }
   if (window.APP_MODE === "test") {
-  console.log("🧪 MODE TEST ACTIVÉ");
-} else {
-  console.log("🚀 MODE PROD ACTIVÉ");
-}
+    console.log("🧪 MODE TEST ACTIVÉ");
+  } else {
+    console.log("🚀 MODE PROD ACTIVÉ");
+  }
 
   loadMatches();
   loadComments();

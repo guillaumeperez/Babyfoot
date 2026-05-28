@@ -8,7 +8,6 @@ function getExpectedScore(eloA, eloB) {
 
 // 🔥 ELO 2v2
 function updateElo2v2(teamBleu, teamRouge, winBleu) {
-
   const eloBleu = (teamBleu[0].elo + teamBleu[1].elo) / 2;
   const eloRouge = (teamRouge[0].elo + teamRouge[1].elo) / 2;
 
@@ -16,7 +15,7 @@ function updateElo2v2(teamBleu, teamRouge, winBleu) {
   const expectedRouge = getExpectedScore(eloRouge, eloBleu);
 
   const diffBleu = K * (winBleu - expectedBleu);
-  const diffRouge = K * ((1 - winBleu) - expectedRouge);
+  const diffRouge = K * (1 - winBleu - expectedRouge);
 
   // 🔥 IMPORTANT : modification DIRECTE
   teamBleu[0].elo += diffBleu;
@@ -26,8 +25,8 @@ function updateElo2v2(teamBleu, teamRouge, winBleu) {
   teamRouge[1].elo += diffRouge;
 
   // arrondi
-  teamBleu.forEach(p => p.elo = Math.round(p.elo));
-  teamRouge.forEach(p => p.elo = Math.round(p.elo));
+  teamBleu.forEach((p) => (p.elo = Math.round(p.elo)));
+  teamRouge.forEach((p) => (p.elo = Math.round(p.elo)));
 }
 
 export { updateElo2v2 };
