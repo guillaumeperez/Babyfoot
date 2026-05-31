@@ -219,13 +219,14 @@ window.resetAllWithArchive = async function () {
     // =========================
     // 📦 ARCHIVE
     // =========================
+
     let ranking = [];
 
     snapshot.forEach((d) => {
       const p = d.data();
 
       ranking.push({
-        name: p.name,
+        name: p.name || "Inconnu",
         wins: p.wins || 0,
         losses: p.losses || 0,
         elo: p.elo || 2000,
@@ -241,14 +242,34 @@ window.resetAllWithArchive = async function () {
 
     const dateKey = new Date().toISOString().replace(/[:.]/g, "-");
 
+    const seasonName = new Date().toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric",
+    });
+
+    // 💾 SAVE ARCHIVE
     await safeSetDoc(doc(db, "archives", `archive_${dateKey}`), {
-      createdAt: new Date(),
+      seasonName,
+      createdAt: serverTimestamp(),
       ranking,
     });
 
     // =========================
-    // 🔥 RESET
+    // 🧨 DELETE MATCHES
     // =========================
+
+    const matchesSnap = await safeGetDocs(collection(db, "matches"));
+
+    if (!matchesSnap.empty) {
+      for (const d of matchesSnap.docs) {
+        await safeDeleteDoc(doc(db, "matches", d.id));
+      }
+    }
+
+    // =========================
+    // 🔥 RESET PLAYERS
+    // =========================
+
     for (const d of snapshot.docs) {
       await safeUpdateDoc(doc(db, "players", d.id), {
         elo: 2000,
@@ -263,7 +284,7 @@ window.resetAllWithArchive = async function () {
     loadRanking?.();
   } catch (error) {
     console.error("❌ reset+archive error :", error);
-    alert("❌ Erreur");
+    alert("❌ Erreur lors du reset + archive");
   }
 };
 
@@ -337,38 +358,47 @@ window.loadDemandes = async function () {
 
   container.innerHTML = "";
 
-  const snapshot = await safeGetDocs(collection(db, "demandes"));
+  try {
+    const snapshot = await safeGetDocs(collection(db, "demandes"));
 
-  if (snapshot.empty) {
-    container.innerHTML = "<p>Aucune demande</p>";
-    return;
+    if (snapshot.empty) {
+      container.innerHTML = "<p>Aucune demande</p>";
+      return;
+    }
+
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+
+      const div = document.createElement("div");
+
+      div.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 5px 0;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+      `;
+
+      const name = data.name || "Inconnu";
+
+      const safeName = name.replace(/'/g, "\\'");
+
+      div.innerHTML = `
+        <span>${name}</span>
+
+        <div style="display:flex; gap:5px;">
+          <button onclick="acceptPlayer('${docSnap.id}', '${safeName}')">✅</button>
+          <button onclick="rejectPlayer('${docSnap.id}')">❌</button>
+        </div>
+      `;
+
+      container.appendChild(div);
+    });
+  } catch (e) {
+    console.error("loadDemandes error:", e);
   }
-
-  snapshot.forEach((docSnap) => {
-    const data = docSnap.data();
-
-    const div = document.createElement("div");
-    div.style = `
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin:5px 0;
-      padding:8px;
-      border:1px solid #ccc;
-      border-radius:8px;
-    `;
-
-    div.innerHTML = `
-      <span>${data.name}</span>
-
-      <div style="display:flex; gap:5px;">
-        <button onclick="acceptPlayer('${docSnap.id}', '${data.name}')">✅</button>
-        <button onclick="rejectPlayer('${docSnap.id}', '${data.name}')">❌</button>
-      </div>
-    `;
-
-    container.appendChild(div);
-  });
 };
 
 // =========================
@@ -567,27 +597,57 @@ window.addPlayer = async function () {
   const input = document.getElementById("playerInput");
   let name = input.value.trim();
 
-  if (!name) return showPlayerMessage("❌ Nom vide", "red");
+  if (!name) {
+    showPlayerMessage("❌ Nom vide", "red");
+    return;
+  }
 
   name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 
-  const snapshot = await safeGetDocs(collection(db, "demandes"));
+  try {
+    // =========================
+    // 🔎 CHECK DOUBLON (demandes)
+    // =========================
+    const demandesSnap = await safeGetDocs(collection(db, "demandes"));
 
-  const exists = snapshot.docs.some(
-    (d) => d.data().name.toLowerCase() === name.toLowerCase(),
-  );
+    const alreadyRequested = demandesSnap.docs.some(
+      (d) => (d.data().name || "").toLowerCase() === name.toLowerCase(),
+    );
 
-  if (exists) {
-    return showPlayerMessage("⏳ Déjà en attente", "orange");
+    if (alreadyRequested) {
+      showPlayerMessage("⏳ Déjà en attente de validation", "orange");
+      return;
+    }
+
+    // =========================
+    // 🔎 CHECK DOUBLON (players déjà validés)
+    // =========================
+    const playersSnap = await safeGetDocs(collection(db, "players"));
+
+    const alreadyExists = playersSnap.docs.some(
+      (d) => (d.data().name || "").toLowerCase() === name.toLowerCase(),
+    );
+
+    if (alreadyExists) {
+      showPlayerMessage("❌ Ce joueur existe déjà", "red");
+      return;
+    }
+
+    // =========================
+    // 📩 CREATE REQUEST
+    // =========================
+    await safeAddDoc(collection(db, "demandes"), {
+      name,
+      status: "pending",
+      createdAt: serverTimestamp(),
+    });
+
+    input.value = "";
+    showPlayerMessage(`📩 Demande envoyée pour ${name}`, "green");
+  } catch (e) {
+    console.error("addPlayer error:", e);
+    showPlayerMessage("❌ Erreur lors de l'envoi", "red");
   }
-
-  await safeAddDoc(collection(db, "demandes"), {
-    name,
-    date: new Date(),
-  });
-
-  input.value = "";
-  showPlayerMessage(`📩 Demande envoyée pour ${name}`, "green");
 };
 
 // =========================
@@ -1155,12 +1215,87 @@ window.loadRanking = async function () {
 
 window.openArchiveModal = async function () {
   const modal = document.getElementById("archiveModal");
+
   if (!modal) return;
 
   modal.style.display = "flex";
 
-  await loadArchiveList();
+  const select = document.getElementById("archiveSelect");
+  if (select) select.value = "";
+
+  try {
+    await loadArchiveList();
+  } catch (e) {
+    console.error("loadArchiveList error:", e);
+  }
 };
+
+let archiveChart = null;
+
+function renderArchiveChart(ranking) {
+  const canvas = document.getElementById("archiveChart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+
+  const labels = ranking.map((p) => p.name);
+  const data = ranking.map((p) => p.elo || 0);
+
+  if (archiveChart) {
+    archiveChart.destroy();
+  }
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const padding = 30;
+
+  archiveChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "ELO",
+          data,
+          backgroundColor: "#3b82f6",
+        },
+      ],
+    },
+
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+
+      layout: {
+        padding: {
+          bottom: 40,
+        },
+      },
+
+      plugins: {
+        legend: { display: false },
+      },
+
+      scales: {
+        x: {
+          ticks: {
+            autoSkip: false,
+            maxRotation: 90,
+            minRotation: 90,
+            font: {
+              size: 10,
+            },
+          },
+        },
+
+        y: {
+          min: min - padding,
+          max: max + padding,
+        },
+      },
+    },
+  });
+}
 
 // =========================
 // ❌ CLOSE ARCHIVE MODAL
@@ -1184,6 +1319,7 @@ window.loadArchiveList = async function () {
     document.getElementById("archiveB"),
   ];
 
+  // 🧹 reset des selects
   selects.forEach((select) => {
     if (select) {
       select.innerHTML = `<option value="">-- Choisir une archive --</option>`;
@@ -1199,19 +1335,20 @@ window.loadArchiveList = async function () {
 
     archives.push({
       id: docSnap.id,
-      date: data.dateKey || docSnap.id,
+      date: data.seasonName || data.dateKey || docSnap.id,
       createdAt: data.createdAt?.seconds || 0,
     });
   });
 
+  // 🔥 tri par date
   archives.sort((a, b) => b.createdAt - a.createdAt);
 
+  // 📦 remplissage des selects
   archives.forEach((archive) => {
     selects.forEach((select) => {
       if (!select) return;
 
       const option = document.createElement("option");
-
       option.value = archive.id;
       option.textContent = `📅 ${archive.date}`;
 
@@ -1223,9 +1360,23 @@ window.loadArchiveList = async function () {
 
   if (archiveSelect) {
     archiveSelect.onchange = function () {
-      if (this.value) {
-        loadArchive(this.value);
+      const container = document.getElementById("archiveTable");
+      const title = document.getElementById("archiveTitle");
+
+      // 🧹 si rien sélectionné → fermeture complète
+      if (!this.value) {
+        if (container) container.innerHTML = "";
+        if (title) title.innerText = "";
+
+        if (window.archiveChart) {
+          window.archiveChart.destroy();
+          window.archiveChart = null;
+        }
+
+        return;
       }
+
+      loadArchive(this.value);
     };
   }
 };
@@ -1240,8 +1391,12 @@ window.loadArchive = async function (archiveId) {
   if (!snap.exists()) return;
 
   const data = snap.data();
+  const ranking = data.ranking || [];
 
-  (data.ranking || []).forEach((p) => {
+  // =========================
+  // 📊 TABLEAU
+  // =========================
+  ranking.forEach((p) => {
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
@@ -1254,6 +1409,21 @@ window.loadArchive = async function (archiveId) {
 
     tbody.appendChild(tr);
   });
+
+  // =========================
+  // 📈 TITRE
+  // =========================
+  const title = document.getElementById("archiveTitle");
+  if (title) {
+    title.innerText = data.seasonName || "Archive";
+  }
+
+  // =========================
+  // 📈 GRAPHIQUE
+  // =========================
+  if (typeof renderArchiveChart === "function") {
+    renderArchiveChart(ranking);
+  }
 };
 
 // =========================

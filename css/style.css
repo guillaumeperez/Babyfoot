@@ -1240,6 +1240,30 @@ Tournoi
   }
 }
 
+#archiveModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+#archiveModal .box {
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+#archiveChart {
+  height: 280px;
+}
+
+#archiveTable {
+  max-height: 250px;
+  overflow-y: auto;
+  display: block;
+}
+
 .history-box {
   display: flex;
   flex-direction: column;
