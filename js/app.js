@@ -126,50 +126,12 @@ window.loginAdmin = async function () {
   }
 };
 
-window.loginAdmin = async function () {
-  const email = prompt("Email admin");
-  const password = prompt("Mot de passe");
-
-  if (!email || !password) return;
-
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-
-    // ✅ AFFICHAGE ADMIN PANEL
-    const panel = document.getElementById("adminPanel");
-    if (panel) panel.style.display = "block";
-
-    alert("✅ Admin connecté");
-  } catch (e) {
-    console.error(e);
-    alert("❌ Erreur connexion");
-  }
-};
-window.isAdmin = false;
-
-onAuthStateChanged(auth, (user) => {
-  const panel = document.getElementById("adminPanel");
-  const badge = document.getElementById("adminBadge");
-
-  window.isAdmin = !!user;
-
-  if (panel) panel.style.display = user ? "block" : "none";
-  if (badge) badge.style.display = user ? "block" : "none";
-
-  // 🔁 reload historique pour recalcul UI
-  loadMatches?.();
-});
-
 // =========================
 // 🚪 LOGOUT ADMIN
 // =========================
 window.logoutAdmin = async function () {
   try {
     await signOut(auth);
-
-    const panel = document.getElementById("adminPanel");
-    if (panel) panel.style.display = "none";
-
     alert("🚪 Déconnecté");
   } catch (e) {
     console.error(e);
@@ -180,31 +142,30 @@ window.logoutAdmin = async function () {
 // =========================
 // 👤 ADMIN STATE
 // =========================
-let isAdmin = false;
-
 window.isAdmin = false;
 
 onAuthStateChanged(auth, (user) => {
   const panel = document.getElementById("adminPanel");
   const badge = document.getElementById("adminBadge");
+  const adminPlayersPanel = document.getElementById("adminPlayersPanel");
 
-  // 🔐 SEUL TON EMAIL EST ADMIN
-  if (user && user.email === "guillaumeper34@gmail.com") {
-    window.isAdmin = true;
+  const isAdminUser = user && user.email === "guillaumeper34@gmail.com";
 
-    if (panel) panel.style.display = "block";
-    if (badge) badge.style.display = "block";
+  window.isAdmin = !!isAdminUser;
 
-    // option si tu as des demandes admin
-    afficherDemandes?.();
-  } else {
-    window.isAdmin = false;
+  if (panel) panel.style.display = isAdminUser ? "block" : "none";
+  if (badge) badge.style.display = isAdminUser ? "block" : "none";
 
-    if (panel) panel.style.display = "none";
-    if (badge) badge.style.display = "none";
+  // ⚠️ seulement si DOM existe
+  if (adminPlayersPanel) {
+    adminPlayersPanel.style.display = isAdminUser ? "block" : "none";
   }
 
-  // 🔁 refresh UI historique
+  if (isAdminUser) {
+    loadDemandes?.();
+    loadAdminPlayers?.();
+  }
+
   loadMatches?.();
 });
 
@@ -246,27 +207,64 @@ window.resetAllTournaments = async function () {
   alert("✅ Tous les tournois supprimés");
 };
 
-//  Reset elo + classement
-window.resetAllElo = async function () {
-  const confirmReset = confirm("⚠️ Reset du classement ELO ?");
+//  Reset elo + classement + sauvegarde archive
+window.resetAllWithArchive = async function () {
+  const confirmAction = confirm("⚠️ ARCHIVER puis RESET le classement ?");
 
-  if (!confirmReset) return;
+  if (!confirmAction) return;
 
-  const snapshot = await getDocs(collection(db, "players"));
+  try {
+    const snapshot = await safeGetDocs(collection(db, "players"));
 
-  for (const d of snapshot.docs) {
-    await updateDoc(doc(db, "players", d.id), {
-      elo: 2000,
-      victory: 0,
-      defeat: 0,
-      goals: 0,
-      goalsAgainst: 0,
-      games: 0,
+    // =========================
+    // 📦 ARCHIVE
+    // =========================
+    let ranking = [];
+
+    snapshot.forEach((d) => {
+      const p = d.data();
+
+      ranking.push({
+        name: p.name,
+        wins: p.wins || 0,
+        losses: p.losses || 0,
+        elo: p.elo || 2000,
+      });
     });
-  }
 
-  alert("✅ Classement reset");
-  loadRanking?.();
+    ranking.sort((a, b) => b.elo - a.elo);
+
+    ranking = ranking.map((p, i) => ({
+      rank: i + 1,
+      ...p,
+    }));
+
+    const dateKey = new Date().toISOString().replace(/[:.]/g, "-");
+
+    await safeSetDoc(doc(db, "archives", `archive_${dateKey}`), {
+      createdAt: new Date(),
+      ranking,
+    });
+
+    // =========================
+    // 🔥 RESET
+    // =========================
+    for (const d of snapshot.docs) {
+      await safeUpdateDoc(doc(db, "players", d.id), {
+        elo: 2000,
+        wins: 0,
+        losses: 0,
+        lastDiff: 0,
+        history: [],
+      });
+    }
+
+    alert("✅ Archive + reset terminé !");
+    loadRanking?.();
+  } catch (error) {
+    console.error("❌ reset+archive error :", error);
+    alert("❌ Erreur");
+  }
 };
 
 window.openModal = function (id) {
@@ -330,24 +328,171 @@ window.fullReset = async function () {
   loadPlayers?.();
 };
 
-// Supprime un joueur
+// =========================
+// 📩 DEMANDES JOUEURS
+// =========================
+window.loadDemandes = async function () {
+  const container = document.getElementById("listeDemandes");
+  if (!container) return;
 
-window.togglePlayer = async function (playerId, isActive) {
+  container.innerHTML = "";
+
+  const snapshot = await safeGetDocs(collection(db, "demandes"));
+
+  if (snapshot.empty) {
+    container.innerHTML = "<p>Aucune demande</p>";
+    return;
+  }
+
+  snapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+
+    const div = document.createElement("div");
+    div.style = `
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin:5px 0;
+      padding:8px;
+      border:1px solid #ccc;
+      border-radius:8px;
+    `;
+
+    div.innerHTML = `
+      <span>${data.name}</span>
+
+      <div style="display:flex; gap:5px;">
+        <button onclick="acceptPlayer('${docSnap.id}', '${data.name}')">✅</button>
+        <button onclick="rejectPlayer('${docSnap.id}', '${data.name}')">❌</button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+};
+
+// =========================
+// ✅ ACCEPT PLAYER
+// =========================
+window.acceptPlayer = async function (id, name) {
+  if (!confirm(`Valider ${name} ?`)) return;
+
+  try {
+    await safeAddDoc(collection(db, "players"), {
+      name,
+      elo: 2000,
+      wins: 0,
+      losses: 0,
+      active: true,
+      createdAt: new Date(),
+    });
+
+    await deleteDoc(doc(db, "demandes", id));
+
+    alert(`✅ ${name} ajouté`);
+
+    loadDemandes?.();
+    loadPlayers?.();
+    loadPlayersSelect?.();
+  } catch (e) {
+    console.error(e);
+    alert("❌ Erreur validation joueur");
+  }
+};
+
+// =========================
+// ❌ REJECT PLAYER
+// =========================
+window.rejectPlayer = async function (id, name) {
+  if (!confirm(`Refuser ${name} ?`)) return;
+
+  try {
+    await deleteDoc(doc(db, "demandes", id));
+
+    alert(`❌ ${name} refusé`);
+
+    loadDemandes?.();
+  } catch (e) {
+    console.error(e);
+    alert("❌ Erreur refus");
+  }
+};
+
+// =========================
+// 🧑 ADMIN PLAYER LIST
+// =========================
+window.loadAdminPlayers = async function () {
+  const container = document.getElementById("adminPlayersList");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const snapshot = await safeGetDocs(collection(db, "players"));
+
+  snapshot.forEach((docSnap) => {
+    const p = docSnap.data();
+    const isActive = p.active !== false;
+
+    const div = document.createElement("div");
+
+    div.style = `
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:8px;
+      margin:5px 0;
+      border:1px solid #ddd;
+      border-radius:8px;
+    `;
+
+    div.innerHTML = `
+      <span style="font-weight:bold;">
+        ${p.name} ${isActive ? "" : "(désactivé)"}
+      </span>
+
+      <button onclick="togglePlayer('${docSnap.id}', ${isActive})">
+        ${isActive ? "🚫 Désactiver" : "♻️ Réactiver"}
+      </button>
+    `;
+
+    container.appendChild(div);
+  });
+};
+
+window.openPlayersModal = function () {
+  openModal("players");
+
+  if (window.isAdmin) {
+    const panel = document.getElementById("adminPlayersPanel");
+    if (panel) panel.style.display = "block";
+
+    loadAdminPlayers?.();
+  } else {
+    const panel = document.getElementById("adminPlayersPanel");
+    if (panel) panel.style.display = "none";
+  }
+};
+// =========================
+// 🔄 TOGGLE PLAYER
+// =========================
+window.togglePlayer = async function (id, isActive) {
   const confirmAction = confirm(
-    isActive ? "⚠️ Désactiver ce joueur ?" : "♻️ Réactiver ce joueur ?",
+    isActive ? "Désactiver ce joueur ?" : "Réactiver ce joueur ?",
   );
 
   if (!confirmAction) return;
 
-  await safeUpdateDoc(doc(db, "players", playerId), {
+  await updateDoc(doc(db, "players", id), {
     active: !isActive,
   });
 
-  loadPlayersModal?.();
-  loadPlayersFilter?.();
+  loadAdminPlayers?.();
   loadRanking?.();
 };
 
+// =========================
+// 👥 MODAL PLAYERS (USER VIEW)
+// =========================
 window.loadPlayersModal = async function () {
   const container = document.getElementById("playersList");
   if (!container) return;
@@ -359,21 +504,24 @@ window.loadPlayersModal = async function () {
   snapshot.forEach((docSnap) => {
     const p = docSnap.data();
 
-    const isActive = p.active !== false;
+    if (p.active === false) return;
 
     const div = document.createElement("div");
-    div.style.display = "flex";
-    div.style.justifyContent = "space-between";
-    div.style.padding = "6px 0";
-    div.style.borderBottom = "1px solid #eee";
+    div.style = `
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:8px 0;
+      border-bottom:1px solid #eee;
+    `;
 
     div.innerHTML = `
       <span>• ${p.name}</span>
 
       ${
         window.isAdmin
-          ? `<button onclick="togglePlayer('${docSnap.id}', ${isActive})">
-              ${isActive ? "🚫" : "♻️"}
+          ? `<button onclick="togglePlayer('${docSnap.id}', ${p.active !== false})">
+              🚫
             </button>`
           : ""
       }
@@ -384,11 +532,10 @@ window.loadPlayersModal = async function () {
 };
 
 // =========================
-// 🎯 SELECT JOUEURS
+// 🎯 SELECT PLAYERS (IMPORTANT FILTER)
 // =========================
 window.loadPlayersSelect = async function () {
   const snapshot = await safeGetDocs(collection(db, "players"));
-  if (!snapshot || !snapshot.forEach) return;
   const selects = ["b1", "b2", "r1", "r2"];
 
   selects.forEach((id) => {
@@ -396,8 +543,10 @@ window.loadPlayersSelect = async function () {
     if (select) select.innerHTML = "<option value=''>-- choisir --</option>";
   });
 
-  snapshot.forEach((doc) => {
-    const p = doc.data();
+  snapshot.forEach((docSnap) => {
+    const p = docSnap.data();
+
+    if (p.active === false) return;
 
     selects.forEach((id) => {
       const select = document.getElementById(id);
@@ -412,7 +561,7 @@ window.loadPlayersSelect = async function () {
 };
 
 // =========================
-// ➕ ADD PLAYER
+// ➕ ADD PLAYER REQUEST
 // =========================
 window.addPlayer = async function () {
   const input = document.getElementById("playerInput");
@@ -422,11 +571,6 @@ window.addPlayer = async function () {
 
   name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 
-  if (window.APP_MODE === "test") {
-    return showPlayerMessage("🧪 Mode test activé", "red");
-  }
-
-  // 🔍 Vérifie si déjà en attente
   const snapshot = await safeGetDocs(collection(db, "demandes"));
 
   const exists = snapshot.docs.some(
@@ -434,19 +578,21 @@ window.addPlayer = async function () {
   );
 
   if (exists) {
-    return showPlayerMessage("⏳ Déjà en attente de validation", "orange");
+    return showPlayerMessage("⏳ Déjà en attente", "orange");
   }
 
   await safeAddDoc(collection(db, "demandes"), {
-    name: name,
+    name,
     date: new Date(),
   });
 
   input.value = "";
-
   showPlayerMessage(`📩 Demande envoyée pour ${name}`, "green");
 };
 
+// =========================
+// 💬 COMMENTS
+// =========================
 window.addComment = async function () {
   const textarea = document.getElementById("commentInput");
   const text = textarea?.value.trim();
@@ -462,6 +608,9 @@ window.addComment = async function () {
   await loadComments();
 };
 
+// =========================
+// 🔔 UI MESSAGE
+// =========================
 function showPlayerMessage(text, color) {
   const box = document.getElementById("playerMessage");
   if (!box) return;
@@ -469,6 +618,7 @@ function showPlayerMessage(text, color) {
   box.style.display = "block";
   box.style.background =
     color === "green" ? "#16a34a" : color === "orange" ? "#f59e0b" : "#dc2626";
+
   box.textContent = text;
 
   setTimeout(() => (box.style.display = "none"), 2000);
@@ -724,13 +874,11 @@ window.deleteMatch = async function (matchId) {
         // 💾 UPDATE PLAYER
         // =========================
 
-        const safeHistory = p.history ? [...p.history] : [];
-
         await safeUpdateDoc(playerRef, {
           elo: p.elo,
           wins,
           losses,
-          history: safeHistory,
+          history,
           lastDiff: 0,
         });
 
@@ -841,6 +989,12 @@ window.saveMatch = async function (event) {
       return;
     }
 
+    // ⏳ Anti-spam 10 secondes
+    if (Date.now() - (window.lastMatchSave || 0) < 10000) {
+      alert("⏳ Attends 10 secondes avant d'ajouter un nouveau match.");
+      return;
+    }
+
     const match = {
       b1,
       b2,
@@ -864,7 +1018,9 @@ window.saveMatch = async function (event) {
       return;
     }
 
-    // 🚀 MODE PROD = 1 SEUL ENREGISTREMENT
+    // 🚀 Démarre le délai seulement avant l'enregistrement réel
+    window.lastMatchSave = Date.now();
+
     const matchRef = await safeAddDoc(collection(db, "matches"), match);
 
     const result = await updatePlayerStats(match);
@@ -873,7 +1029,6 @@ window.saveMatch = async function (event) {
       eloBefore: result.eloBefore,
       eloAfter: result.eloAfter,
       eloChange: result.eloChange,
-
       played: true,
     });
 
@@ -883,6 +1038,7 @@ window.saveMatch = async function (event) {
     alert("Erreur lors de l'enregistrement du match");
   } finally {
     window.isSaving = false;
+
     if (btn) btn.disabled = false;
   }
 };
@@ -891,96 +1047,315 @@ window.saveMatch = async function (event) {
 // 🏆 RANKING
 // =========================
 
+let isRankingLoading = false;
+let lastRankingCall = 0;
+
 window.loadRanking = async function () {
-  const tbody = document.getElementById("rankingList");
-  const podium = document.getElementById("podium");
+  if (isRankingLoading) return;
 
-  if (!tbody || !podium) return;
+  const now = Date.now();
+  if (now - lastRankingCall < 200) return;
 
-  tbody.innerHTML = "";
-  podium.innerHTML = "";
+  lastRankingCall = now;
+  isRankingLoading = true;
 
-  const snapshot = await safeGetDocs(collection(db, "players"));
+  try {
+    console.log("🏆 loadRanking exécuté");
 
-  let players = [];
+    const tbody = document.getElementById("rankingList");
+    const podium = document.getElementById("podium");
 
-  snapshot.forEach((d) => {
-    const data = d.data();
+    if (!tbody || !podium) return;
 
-    players.push({
-      name: data.name || "Inconnu",
-      wins: data.wins || 0,
-      losses: data.losses || 0,
-      elo: data.elo || 2000,
-      lastDiff: data.lastDiff || 0,
-      history: data.history || [],
+    tbody.innerHTML = "";
+    podium.innerHTML = "";
+
+    const snapshot = await safeGetDocs(collection(db, "players"));
+
+    let players = [];
+
+    snapshot.forEach((d) => {
+      const data = d.data();
+
+      if (data.active === false) return;
+
+      players.push({
+        name: data.name || "Inconnu",
+        wins: data.wins || 0,
+        losses: data.losses || 0,
+        elo: data.elo || 2000,
+        lastDiff: data.lastDiff || 0,
+        history: data.history || [],
+      });
+    });
+
+    if (players.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='7'>Aucun joueur</td></tr>";
+      return;
+    }
+
+    // TRI
+    players.sort((a, b) => b.elo - a.elo);
+
+    // PODIUM
+    const top3 = players.slice(0, 3);
+
+    top3.forEach((p, i) => {
+      const div = document.createElement("div");
+      div.classList.add("podium-box");
+
+      if (i === 0) div.classList.add("podium-1");
+      if (i === 1) div.classList.add("podium-2");
+      if (i === 2) div.classList.add("podium-3");
+
+      const medal = ["🥇", "🥈", "🥉"][i];
+
+      div.innerHTML = `
+        <div style="font-size:24px">${medal}</div>
+        <span>${p.name}</span>
+        <span>${p.elo || 2000}</span>
+      `;
+
+      podium.appendChild(div);
+    });
+
+    // TABLEAU
+    players.forEach((p, i) => {
+      const diff = p.lastDiff || 0;
+      const diffText = diff > 0 ? "+" + diff : diff;
+
+      let color = "white";
+      if (diff > 0) color = "#22c55e";
+      if (diff < 0) color = "#ef4444";
+
+      const form = (p.history || []).join("");
+
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${p.name}</td>
+        <td>${p.wins}</td>
+        <td>${p.losses}</td>
+        <td><b>${p.elo}</b></td>
+        <td style="color:${color}; font-weight:bold;">${diffText}</td>
+        <td>${form}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  } finally {
+    isRankingLoading = false;
+  }
+};
+
+// =========================
+// 📦  ARCHIVE
+// =========================
+
+window.openArchiveModal = async function () {
+  const modal = document.getElementById("archiveModal");
+  if (!modal) return;
+
+  modal.style.display = "flex";
+
+  await loadArchiveList();
+};
+
+// =========================
+// ❌ CLOSE ARCHIVE MODAL
+// =========================
+
+window.closeArchiveModal = function () {
+  const modal = document.getElementById("archiveModal");
+  if (!modal) return;
+
+  modal.style.display = "none";
+};
+
+// =========================
+// 📂 LOAD ARCHIVE LIST
+// =========================
+
+window.loadArchiveList = async function () {
+  const selects = [
+    document.getElementById("archiveSelect"),
+    document.getElementById("archiveA"),
+    document.getElementById("archiveB"),
+  ];
+
+  selects.forEach((select) => {
+    if (select) {
+      select.innerHTML = `<option value="">-- Choisir une archive --</option>`;
+    }
+  });
+
+  const snapshot = await safeGetDocs(collection(db, "archives"));
+
+  const archives = [];
+
+  snapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+
+    archives.push({
+      id: docSnap.id,
+      date: data.dateKey || docSnap.id,
+      createdAt: data.createdAt?.seconds || 0,
     });
   });
 
-  // 🔥 DEBUG
-  console.log("JOUEURS :", players);
+  archives.sort((a, b) => b.createdAt - a.createdAt);
 
-  if (players.length === 0) {
-    tbody.innerHTML = "<tr><td colspan='7'>Aucun joueur</td></tr>";
-    return;
-  }
+  archives.forEach((archive) => {
+    selects.forEach((select) => {
+      if (!select) return;
 
-  // 🔥 TRI PAR ELO
-  players.sort((a, b) => b.elo - a.elo);
+      const option = document.createElement("option");
 
-  // 🏆 PODIUM MODERNE
-  const top3 = players.slice(0, 3);
+      option.value = archive.id;
+      option.textContent = `📅 ${archive.date}`;
 
-  top3.forEach((p, i) => {
-    const div = document.createElement("div");
-
-    div.classList.add("podium-box");
-
-    if (i === 0) div.classList.add("podium-1");
-    if (i === 1) div.classList.add("podium-2");
-    if (i === 2) div.classList.add("podium-3");
-
-    const medal = ["🥇", "🥈", "🥉"][i];
-
-    div.innerHTML = `
-    <div style="font-size:24px">${medal}</div>
-    <span>${p.name}</span>
-    <span>${p.elo || 2000}</span>
-  `;
-
-    podium.appendChild(div);
+      select.appendChild(option);
+    });
   });
 
-  // 📊 TABLEAU
-  players.forEach((p, i) => {
-    const diff = p.lastDiff || 0;
-    const diffText = diff > 0 ? "+" + diff : diff;
+  const archiveSelect = document.getElementById("archiveSelect");
 
-    let color = "white";
-    if (diff > 0) color = "#22c55e";
-    if (diff < 0) color = "#ef4444";
+  if (archiveSelect) {
+    archiveSelect.onchange = function () {
+      if (this.value) {
+        loadArchive(this.value);
+      }
+    };
+  }
+};
 
-    const form = p.history
-      .map((r) => {
-        if (r === "W" || r === "w") return "🟢";
-        if (r === "L" || r === "l") return "🔴";
-        return r; // déjà emoji
-      })
-      .join("");
+window.loadArchive = async function (archiveId) {
+  const tbody = document.getElementById("archiveTable");
+  if (!tbody) return;
 
+  tbody.innerHTML = "";
+
+  const snap = await safeGetDoc(doc(db, "archives", archiveId));
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  (data.ranking || []).forEach((p) => {
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
-      <td>${i + 1}</td>
+      <td>${p.rank}</td>
       <td>${p.name}</td>
       <td>${p.wins}</td>
       <td>${p.losses}</td>
       <td><b>${p.elo}</b></td>
-      <td style="color:${color}; font-weight:bold;">${diffText}</td>
-      <td>${form}</td>
     `;
 
     tbody.appendChild(tr);
+  });
+};
+
+// =========================
+// 📂 Compare ARCHIVE LIST
+// =========================
+window.compareArchives = async function (idA, idB) {
+  if (!idA || !idB) return;
+
+  const aSnap = await safeGetDoc(doc(db, "archives", idA));
+  const bSnap = await safeGetDoc(doc(db, "archives", idB));
+
+  if (!aSnap.exists() || !bSnap.exists()) return;
+
+  const a = aSnap.data().ranking || [];
+  const b = bSnap.data().ranking || [];
+
+  const mapA = new Map(a.map((p) => [p.name, p.elo]));
+  const mapB = new Map(b.map((p) => [p.name, p.elo]));
+
+  const allNames = new Set([...mapA.keys(), ...mapB.keys()]);
+
+  const evolution = [];
+
+  allNames.forEach((name) => {
+    const eloA = mapA.get(name) ?? 2000;
+    const eloB = mapB.get(name) ?? 2000;
+
+    evolution.push({
+      name,
+      before: eloA,
+      after: eloB,
+      diff: eloB - eloA,
+    });
+  });
+
+  evolution.sort((a, b) => b.diff - a.diff);
+
+  renderEvolutionTable(evolution);
+  renderSeasonChart(evolution);
+};
+
+window.runArchiveComparison = function () {
+  const a = document.getElementById("archiveA")?.value;
+  const b = document.getElementById("archiveB")?.value;
+
+  window.compareArchives(a, b);
+};
+
+// =========================
+// 📂 Evolution dans ARCHIVE
+// =========================
+window.renderEvolutionTable = function (data) {
+  const tbody = document.getElementById("evolutionTable");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  data.forEach((p) => {
+    const tr = document.createElement("tr");
+
+    let color = "black";
+    if (p.diff > 0) color = "green";
+    if (p.diff < 0) color = "red";
+
+    tr.innerHTML = `
+      <td>${p.name}</td>
+      <td>${p.before}</td>
+      <td>${p.after}</td>
+      <td style="color:${color}; font-weight:bold;">
+        ${p.diff > 0 ? "+" : ""}${p.diff}
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+};
+
+let seasonChart = null;
+
+window.renderSeasonChart = function (data) {
+  const ctx = document.getElementById("seasonChart");
+
+  if (!ctx) return;
+
+  if (seasonChart) {
+    seasonChart.destroy();
+  }
+
+  seasonChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: data.map((p) => p.name),
+      datasets: [
+        {
+          label: "ELO fin de saison",
+          data: data.map((p) => p.after),
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+    },
   });
 };
 

@@ -36,7 +36,7 @@
     </div>
 
     <!-- =========================
-💬 Informations
+💬 Modals
 ========================= -->
     <div class="beta-box">
       ⚠️ News : graphique + elo gain/perte dans l'historique !<br>
@@ -44,62 +44,74 @@
 
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 
-    <div class="menu">
-      <!-- LIGNE 1 -->
-      <button class="carte big" onclick="openModal('players')">
-        <lottie-player src="lottie/players.json" loop autoplay></lottie-player>
-        <span>Joueurs</span>
-      </button>
+    
+<div class="menu">
 
-      <button class="carte big" onclick="openModal('score')">
-        <lottie-player src="lottie/score.json" loop autoplay></lottie-player>
-        <span>Ajouter score</span>
-      </button>
+  <!-- =========================
+  LIGNE 1
+  ========================= -->
+  <button class="carte big" onclick="openModal('score')">
+    <lottie-player src="lottie/score.json" loop autoplay></lottie-player>
+    <span>Ajouter score</span>
+  </button>
 
-      <button class="carte big" onclick="openRanking()">
-        <lottie-player src="lottie/ranking.json" loop autoplay></lottie-player>
-        <span>Classement</span>
-      </button>
+  <button class="carte big" onclick="openRanking()">
+    <lottie-player src="lottie/ranking.json" loop autoplay></lottie-player>
+    <span>Classement</span>
+  </button>
 
-      <!-- LIGNE 2 -->
-      <button class="carte big" onclick="openModal('tournament')">
-        <lottie-player src="lottie/tournament.json" loop autoplay></lottie-player>
-        <span>Tournoi</span>
-      </button>
+  <button class="carte big" onclick="openHistory()">
+    <lottie-player src="lottie/history.json" loop autoplay></lottie-player>
+    <span>Historique</span>
+  </button>
 
-      <button class="carte big" onclick="openModal('rules')">
-        <lottie-player src="lottie/rules.json" loop autoplay></lottie-player>
-        <span>Règles</span>
-      </button>
 
-      <button class="carte big" onclick="openHistory()">
-        <lottie-player src="lottie/history.json" loop autoplay></lottie-player>
-        <span>Historique</span>
-      </button>
+  <!-- =========================
+  LIGNE 2
+  ========================= -->
+  <button class="carte big" onclick="openModal('tournament')">
+    <lottie-player src="lottie/tournament.json" loop autoplay></lottie-player>
+    <span>Tournoi</span>
+  </button>
 
-      <!-- LIGNE 3 -->
-      <button class="carte big comment" onclick="openModal('comment')">
-        <lottie-player src="lottie/comment.json" loop autoplay></lottie-player>
-        <span>Commentaire</span>
-      </button>
+  <button class="carte big" onclick="openPlayersModal()">
+    <lottie-player src="lottie/players.json" loop autoplay></lottie-player>
+    <span>Joueurs</span>
+  </button>
 
-      <button class="carte big admin" onclick="loginAdmin()">
-        <lottie-player src="lottie/loginAdmin.json" loop autoplay></lottie-player>
-        <span>Admin</span>
-      </button>
+  <button class="carte big comment" onclick="openModal('comment')">
+    <lottie-player src="lottie/comment.json" loop autoplay></lottie-player>
+    <span>Commentaire</span>
+  </button>
 
-    </div>
+
+  <!-- =========================
+  LIGNE 3
+  ========================= -->
+  <button class="carte big" onclick="openArchiveModal()">
+    <lottie-player src="lottie/archives.json" loop autoplay></lottie-player>
+    <span>Archives</span>
+  </button>
+
+  <button class="carte big" onclick="openModal('rules')">
+    <lottie-player src="lottie/rules.json" loop autoplay></lottie-player>
+    <span>Règles</span>
+  </button>
+
+  <button class="carte big admin" onclick="loginAdmin()">
+    <lottie-player src="lottie/loginAdmin.json" loop autoplay></lottie-player>
+    <span>Admin</span>
+  </button>
+
+</div>
 
     <!-- =========================
-👥 JOUEURS
-========================= -->
+     👥 JOUEURS
+     ========================= -->
     <div id="players" class="modal">
   <div class="box">
 
     <h3 class="title">Joueurs</h3>
-
-    <!-- LISTE JOUEURS -->
-    <div id="playersList"></div>
 
     <!-- INPUT AJOUT -->
     <input
@@ -131,8 +143,10 @@
 
     </div>
 
-    <!-- MESSAGE INFO -->
-    <div id="playerMessage"></div>
+    <div id="adminPlayersPanel" style="display:none;">
+  <h4>⚙️ Gestion joueurs</h4>
+  <div id="adminPlayersList"></div>
+</div>
 
   </div>
 </div>
@@ -351,55 +365,56 @@ CREATE TOURNAMENT
   </div>
 
 
-  <!-- =========================
-          Admin
+<!-- =========================
+⚙️ ADMINISTRATION
 ========================= -->
-  <div id="adminPanel" style="display:none;">
+<div id="adminPanel" style="display:none;">
 
-    <h3>⚙️ Administration</h3>
+  <h3>⚙️ Administration</h3>
 
-    <h4>📩 Demandes en attente</h4>
-    <div id="listeDemandes"></div>
+  <h4>📩 Demandes en attente</h4>
+  <div id="listeDemandes"></div>
 
-    <hr>
+  <hr>  
 
-    <h4>🧨 Reset base de données</h4>
+  <h4>🛠️ Outils administrateur</h4>
 
-    <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+  <div style="
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:10px;
+  ">
 
-      <button onclick="resetAllMatches()">
-        🗑 Reset Matchs
-      </button>
+    <button onclick="resetAllMatches()">
+      🗑 Supprimer tous les matchs
+    </button>
 
-      <button onclick="resetAllTournaments()">
-        🏆 Reset Tournois
-      </button>
+    <button onclick="resetAllTournaments()">
+      🏆 Supprimer tous les tournois
+    </button>
 
-      <button onclick="resetAllElo()">
-        📉 Reset Classement
-      </button>
+    <button onclick="resetAllWithArchive()">
+      📦 Clôturer la saison
+      <br>
+      <small>(archive + remise à zéro du classement)</small>
+    </button>
 
-      <button onclick="fullReset()">
-        ☢ RESET COMPLET
-      </button>
+    <button onclick="fullReset()">
+      ☢ Réinitialisation complète
+    </button>
 
-      <button onclick="logoutAdmin()">
-        🚪 Quitter admin
-      </button>
-
-    </div>
+    <button onclick="logoutAdmin()">
+      🚪 Quitter l'administration
+    </button>
 
   </div>
 
-  <!-- =========================
-📋 LISTE JOUEURS ADMIN
-========================= -->
-<div id="playersList" style="margin-top:15px; max-height:300px; overflow:auto;">
 </div>
 
   <!-- =========================
-➕ SCORE
-========================= -->
+   ➕ SCORE
+   ========================= -->
   <div id="score" class="modal">
     <div class="box">
 
@@ -631,8 +646,129 @@ CREATE TOURNAMENT
     </div>
   </div>
 
+<!-- =========================
+📦 MODAL ARCHIVES
+========================= -->
+<div id="archiveModal" class="modal" style="display:none;">
+  <div class="modal-content" style="
+  max-width:800px;
+  margin:auto;
+  padding:20px;
+  background:white;
+  border-radius:12px;
+  color:black;">
 
-  <!-- =========================
+  <table style="
+  width:100%;
+  margin-top:10px;
+  color:black;">
+
+  <table style="
+  width:100%;
+  border-collapse:collapse;
+  color:black;
+">
+
+    <h2>📦 Archives du classement</h2>
+
+    <!-- =========================
+    🔍 COMPARAISON SAISON
+    ========================= -->
+    <h3>📊 Évolution entre 2 saisons</h3>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <select id="archiveA" style="flex:1; padding:10px;">
+        <option value="">Saison A</option>
+      </select>
+
+      <select id="archiveB" style="flex:1; padding:10px;">
+        <option value="">Saison B</option>
+      </select>
+
+      <button onclick="runArchiveComparison()" style="
+        padding:10px 14px;
+        background:#3b82f6;
+        color:white;
+        border:none;
+        border-radius:8px;
+        cursor:pointer;
+      ">
+        Comparer
+      </button>
+    </div>
+
+    <table style="width:100%; margin-top:10px;">
+      <thead>
+        <tr>
+          <th>Joueur</th>
+          <th>Début</th>
+          <th>Fin</th>
+          <th>Δ ELO</th>
+        </tr>
+      </thead>
+      <tbody id="evolutionTable"></tbody>
+    </table>
+
+    <hr style="margin:20px 0;">
+
+    <h3>📈 Graphique de saison</h3>
+
+<canvas
+  id="seasonChart"
+  style="
+    margin-top:15px;
+    max-height:400px;
+    width:100%;
+  ">
+</canvas>
+
+    <!-- =========================
+    📦 ARCHIVE SIMPLE
+    ========================= -->
+
+    <h3>📦 Voir une archive</h3>
+
+    <select id="archiveSelect" style="
+      width:100%;
+      padding:10px;
+      margin:10px 0;
+      border-radius:8px;
+    ">
+      <option value="">-- Choisir une archive --</option>
+    </select>
+
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Rang</th>
+          <th>Joueur</th>
+          <th>V</th>
+          <th>D</th>
+          <th>ELO</th>
+        </tr>
+      </thead>
+      <tbody id="archiveTable"></tbody>
+    </table>
+
+    <button onclick="closeArchiveModal()" style="
+      margin-top:15px;
+      background:#ef4444;
+      color:white;
+      border:none;
+      padding:10px 14px;
+      border-radius:8px;
+      cursor:pointer;
+      width:100%;
+      font-weight:bold;
+    ">
+      ❌ Fermer
+    </button>
+
+  </div>
+</div>
+
+
+ <!-- =========================
 �💬 COMMENTAIRES
 ========================= -->
   <div id="comment" class="modal">

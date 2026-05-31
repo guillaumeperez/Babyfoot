@@ -29,12 +29,12 @@ body {
 
 .menu {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-width: 420px;
+  margin: 20px auto;
   padding: 10px;
   justify-items: center;
-  max-width: 500px;
-  margin: 30px auto;
 }
 
 .actions {
@@ -156,14 +156,10 @@ button img {
 }
 
 .carte.big {
-  width: 120px;
-  min-width: 120px;
+  width: 100%;
   max-width: 120px;
-  height: 120px;
-  min-height: 120px;
-  max-height: 120px;
+  aspect-ratio: 1 / 1;
 
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -552,62 +548,22 @@ footer {
 /* MOBILE */
 @media (max-width: 900px) {
   .menu {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    max-width: 440px;
-    margin: 20px auto;
+    max-width: 100%;
   }
 
   .carte.big {
-    width: 22vw;
-    min-width: 90px;
     max-width: 100px;
-    aspect-ratio: 1 / 1;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
   }
 
   .carte.big lottie-player {
-    width: 65%;
-    height: 65%;
+    width: 55%;
+    height: 55%;
   }
 
   .carte.big span {
-    font-size: 14px;
-    margin-top: 5px;
-    text-align: center;
-    width: 100%;
-  }
-
-  .logo {
-    width: 180px;
-  }
-
-  .box {
-    width: 90%;
-    max-width: 90%;
-    margin: 20px auto;
-
-    max-height: 85vh; /* 🔥 hauteur max écran */
-    overflow-y: auto; /* 🔥 scroll interne */
-
-    padding: 15px;
-  }
-
-  .modal.active {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
+    font-size: 12px;
   }
 }
 
@@ -634,75 +590,76 @@ body.no-scroll {
 ========================= */
 @media (max-width: 480px) {
   .menu {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    max-width: 100%;
-    margin: 10px auto;
-    padding: 0 8px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
 
   .carte.big {
-    width: 100%;
-    max-width: 140px;
-    height: auto;
-    aspect-ratio: 1 / 1;
-    max-height: 100%;
+    max-width: 90px;
   }
+}
 
-  .carte.big lottie-player {
-    width: 60%;
-    height: 60%;
-  }
+.carte.big {
+  width: 100%;
+  max-width: 140px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  max-height: 100%;
+}
 
-  .carte.big span {
-    font-size: 12px;
-    margin-top: 3px;
-    text-align: center;
-    width: 100%;
-  }
+.carte.big lottie-player {
+  width: 60%;
+  height: 60%;
+}
 
-  .logo {
-    width: 140px;
-  }
+.carte.big span {
+  font-size: 12px;
+  margin-top: 3px;
+  text-align: center;
+  width: 100%;
+}
 
-  .box {
-    width: 95%;
-    max-width: 95%;
-    padding: 10px;
-    margin: 10px auto;
-    max-height: 90vh;
-  }
+.logo {
+  width: 140px;
+}
 
-  input,
-  select,
-  textarea {
-    font-size: 16px;
-    padding: 8px;
-  }
+.box {
+  width: 95%;
+  max-width: 95%;
+  padding: 10px;
+  margin: 10px auto;
+  max-height: 90vh;
+}
 
-  button {
-    font-size: 14px;
-    padding: 10px;
-  }
+input,
+select,
+textarea {
+  font-size: 16px;
+  padding: 8px;
+}
 
-  .accordion {
-    padding: 10px;
-    font-size: 14px;
-  }
+button {
+  font-size: 14px;
+  padding: 10px;
+}
 
-  .beta-box {
-    font-size: 14px;
-    padding: 8px 10px;
-  }
+.accordion {
+  padding: 10px;
+  font-size: 14px;
+}
 
-  table {
-    font-size: 12px;
-  }
+.beta-box {
+  font-size: 14px;
+  padding: 8px 10px;
+}
 
-  th,
-  td {
-    padding: 6px 4px;
-  }
+table {
+  font-size: 12px;
+}
+
+th,
+td {
+  padding: 6px 4px;
 }
 
 /* =========================
