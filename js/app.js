@@ -620,7 +620,7 @@ window.addPlayer = async function () {
     }
 
     // =========================
-    // 🔎 CHECK DOUBLON (players déjà validés)
+    // 🔎 CHECK DOUBLON (players)
     // =========================
     const playersSnap = await safeGetDocs(collection(db, "players"));
 
@@ -643,10 +643,15 @@ window.addPlayer = async function () {
     });
 
     input.value = "";
-    showPlayerMessage(`📩 Demande envoyée pour ${name}`, "green");
+
+    showPlayerMessage(
+      `📩 "${name}" a été envoyé à l'admin (en attente de validation)`,
+      "green",
+    );
   } catch (e) {
     console.error("addPlayer error:", e);
-    showPlayerMessage("❌ Erreur lors de l'envoi", "red");
+
+    showPlayerMessage("❌ Erreur lors de l'envoi de la demande", "red");
   }
 };
 
