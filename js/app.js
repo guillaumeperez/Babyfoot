@@ -940,12 +940,12 @@ window.deleteMatch = async function (matchId) {
         // =========================
 
         await safeUpdateDoc(playerRef, {
-          elo: p.elo,
-          wins,
-          losses,
-          history,
-          lastDiff: 0,
-        });
+  elo: p.elo ?? 2000,
+  wins: wins ?? 0,
+  losses: losses ?? 0,
+  history: Array.isArray(history) ? history : [],
+  lastDiff: 0,
+});
 
         console.log(`♻️ ${p.name} restauré à ${p.elo}`);
       }
@@ -1103,12 +1103,16 @@ window.saveMatch = async function (event) {
     // =========================
     // 💾 UPDATE MATCH
     // =========================
-    await safeUpdateDoc(matchRef, {
-      eloBefore: result.eloBefore,
-      eloAfter: result.eloAfter,
-      eloChange: result.eloChange,
-      played: true,
-    });
+   const safeResult = {
+  eloBefore: result?.eloBefore ?? {},
+  eloAfter: result?.eloAfter ?? {},
+  eloChange: result?.eloChange ?? {},
+};
+
+await safeUpdateDoc(matchRef, {
+  ...safeResult,
+  played: true,
+});
 
     showScoreMessage("✅ Match enregistré", "green");
 
@@ -1572,14 +1576,12 @@ async function updatePlayerStats(match) {
   }
 
   const snapshot = await safeGetDocs(collection(db, "players"));
-
   const names = [match.b1, match.b2, match.r1, match.r2].filter(Boolean);
 
   let joueurs = [];
 
   snapshot.forEach((d) => {
     const p = d.data();
-
     if (!p?.name) return;
     if (!names.includes(p.name)) return;
 
@@ -1599,15 +1601,17 @@ async function updatePlayerStats(match) {
 
   const blueWin = match.sb > match.sr;
 
-  const teamBleu = joueurs.filter((j) =>
-    [match.b1, match.b2].includes(j.name)
-  );
+  // ✅ Déclaration D'ABORD
+  const teamBleu = joueurs.filter((j) => [match.b1, match.b2].includes(j.name));
+  const teamRouge = joueurs.filter((j) => [match.r1, match.r2].includes(j.name));
 
-  const teamRouge = joueurs.filter((j) =>
-    [match.r1, match.r2].includes(j.name)
-  );
+  // ✅ Sécurisation ENSUITE
+  [...teamBleu, ...teamRouge].forEach(j => {
+    if (typeof j.elo !== "number" || isNaN(j.elo)) j.elo = 2000;
+    if (typeof j.oldElo !== "number" || isNaN(j.oldElo)) j.oldElo = 2000;
+  });
 
-  // ⚠️ ELO CALCUL
+  // ✅ Calcul ELO UNE SEULE FOIS
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
 
   let simulationResult = [];
@@ -1627,9 +1631,7 @@ async function updatePlayerStats(match) {
       j.history.push("🔴");
     }
 
-    if (j.history.length > 5) {
-      j.history.shift();
-    }
+    if (j.history.length > 5) j.history.shift();
 
     const oldElo = j.oldElo ?? 2000;
     const newElo = j.elo ?? oldElo;
@@ -1644,13 +1646,15 @@ async function updatePlayerStats(match) {
       history: j.history,
     });
 
-    // 🚨 SAFE FIREBASE UPDATE (ANTI-UNDEFINED)
     if (!isTestMode() && j.id) {
+      const safeElo = typeof newElo === "number" && !isNaN(newElo) ? Math.round(newElo) : 2000;
+      const safeOldElo = typeof oldElo === "number" && !isNaN(oldElo) ? Math.round(oldElo) : 2000;
+
       await safeUpdateDoc(doc(db, "players", j.id), {
         wins: wins ?? 0,
         losses: losses ?? 0,
-        elo: newElo,
-        lastDiff: Math.round(newElo - oldElo),
+        elo: safeElo,
+        lastDiff: safeElo - safeOldElo,
         history: Array.isArray(j.history) ? j.history : [],
       });
     }
@@ -1663,21 +1667,18 @@ async function updatePlayerStats(match) {
       r1: Math.round(teamRouge[0]?.oldElo ?? 2000),
       r2: Math.round(teamRouge[1]?.oldElo ?? 2000),
     },
-
     eloAfter: {
       b1: Math.round(teamBleu[0]?.elo ?? 2000),
       b2: Math.round(teamBleu[1]?.elo ?? 2000),
       r1: Math.round(teamRouge[0]?.elo ?? 2000),
       r2: Math.round(teamRouge[1]?.elo ?? 2000),
     },
-
     eloChange: {
       b1: Math.round((teamBleu[0]?.elo ?? 2000) - (teamBleu[0]?.oldElo ?? 2000)),
       b2: Math.round((teamBleu[1]?.elo ?? 2000) - (teamBleu[1]?.oldElo ?? 2000)),
       r1: Math.round((teamRouge[0]?.elo ?? 2000) - (teamRouge[0]?.oldElo ?? 2000)),
       r2: Math.round((teamRouge[1]?.elo ?? 2000) - (teamRouge[1]?.oldElo ?? 2000)),
     },
-
     debug: simulationResult,
   };
 }
@@ -3242,12 +3243,14 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typeof collection !== "undefined") window.collection = collection;
 
   // expose fonctions utiles pour debug manuel
+  window.loadRanking = loadRanking;
   window.loadMatches = loadMatches;
   window.loadComments = loadComments;
   window.loadPlayersSelect = loadPlayersSelect;
   window.loadPlayersFilter = loadPlayersFilter;
   window.loadPlayersTrendFilter = loadPlayersTrendFilter;
   window.loadTournaments = loadTournaments;
+  loadRanking();
 
   // =========================
   // 🚀 LOAD INITIAL DATA
