@@ -1019,7 +1019,6 @@ window.deleteTournament = async function (tournamentId) {
 // =========================
 // 💾 SAVE MATCH
 // =========================
-
 window.saveMatch = async function (event) {
   if (window.isSaving) return;
   window.isSaving = true;
@@ -1036,6 +1035,9 @@ window.saveMatch = async function (event) {
     const r1 = document.getElementById("r1")?.value;
     const r2 = document.getElementById("r2")?.value;
 
+    // =========================
+    // 🔒 VALIDATION
+    // =========================
     if (isNaN(sb) || isNaN(sr)) {
       alert("Score invalide");
       return;
@@ -1051,6 +1053,9 @@ window.saveMatch = async function (event) {
       return;
     }
 
+    // =========================
+    // ⏳ ANTI-SPAM
+    // =========================
     if (Date.now() - (window.lastMatchSave || 0) < 10000) {
       alert("⏳ Attends 10 secondes avant d'ajouter un nouveau match.");
       return;
@@ -1068,26 +1073,36 @@ window.saveMatch = async function (event) {
       createdAtLocal: Date.now(),
     };
 
+    // =========================
+    // 🧪 MODE TEST
+    // =========================
     if (window.APP_MODE === "test") {
       console.log("🧪 MATCH TEST (NON ENREGISTRÉ)", match);
 
       const result = await updatePlayerStats(match);
-
-      console.log("RESULT TEST :", result);
+      console.log("🧪 RESULT TEST :", result);
 
       showScoreMessage("🧪 Match simulé", "orange");
       return;
     }
 
+    // =========================
+    // 🚀 SAVE MATCH
+    // =========================
     window.lastMatchSave = Date.now();
 
-    const matchRef = await safeAddDoc(
-      collection(db, "matches"),
-      match
-    );
+    const matchRef = await safeAddDoc(collection(db, "matches"), match);
 
     const result = await updatePlayerStats(match);
 
+    // =========================
+    // 🧪 DEBUG SAFE (résultat ELO)
+    // =========================
+    console.log("🧪 ELO RESULT DEBUG :", result);
+
+    // =========================
+    // 💾 UPDATE MATCH
+    // =========================
     await safeUpdateDoc(matchRef, {
       eloBefore: result.eloBefore,
       eloAfter: result.eloAfter,
@@ -1107,17 +1122,15 @@ window.saveMatch = async function (event) {
 
     alert(
       "Erreur : " +
-        (e?.message || e) +
-        "\nCode : " +
-        (e?.code || "aucun")
+      (e?.message || e) +
+      "\nCode : " +
+      (e?.code || "aucun")
     );
 
   } finally {
     window.isSaving = false;
 
-    if (btn) {
-      btn.disabled = false;
-    }
+    if (btn) btn.disabled = false;
   }
 };
 
