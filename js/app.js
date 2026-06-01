@@ -424,6 +424,7 @@ window.acceptPlayer = async function (id, name) {
     loadDemandes?.();
     loadPlayers?.();
     loadPlayersSelect?.();
+    loadPendingRequests?.();
   } catch (e) {
     console.error(e);
     alert("❌ Erreur validation joueur");
@@ -442,6 +443,7 @@ window.rejectPlayer = async function (id, name) {
     alert(`❌ ${name} refusé`);
 
     loadDemandes?.();
+    loadPendingRequests?.();
   } catch (e) {
     console.error(e);
     alert("❌ Erreur refus");
@@ -615,7 +617,10 @@ window.addPlayer = async function () {
     );
 
     if (alreadyRequested) {
-      showPlayerMessage("⏳ Déjà en attente de validation", "orange");
+      showPlayerMessage(
+        "⚠️ Une demande pour ce joueur est déjà en attente de validation",
+        "orange",
+      );
       return;
     }
 
@@ -648,6 +653,9 @@ window.addPlayer = async function () {
       `📩 "${name}" a été envoyé à l'admin (en attente de validation)`,
       "green",
     );
+
+    // 📋 Mettre à jour l'affichage des demandes en attente
+    loadPendingRequests?.();
   } catch (e) {
     console.error("addPlayer error:", e);
 
@@ -734,6 +742,7 @@ window.refuserDemande = async function (id) {
   alert("❌ Demande refusée");
 
   afficherDemandes();
+  loadPendingRequests?.();
 };
 
 // =========================
@@ -759,6 +768,9 @@ window.validerDemande = async function (id, name) {
 
   // Recharge les joueurs
   loadPlayersSelect();
+
+  // 📋 Mettre à jour l'affichage des demandes en attente
+  loadPendingRequests?.();
 };
 
 // =========================
@@ -940,12 +952,12 @@ window.deleteMatch = async function (matchId) {
         // =========================
 
         await safeUpdateDoc(playerRef, {
-  elo: p.elo ?? 2000,
-  wins: wins ?? 0,
-  losses: losses ?? 0,
-  history: Array.isArray(history) ? history : [],
-  lastDiff: 0,
-});
+          elo: p.elo ?? 2000,
+          wins: wins ?? 0,
+          losses: losses ?? 0,
+          history: Array.isArray(history) ? history : [],
+          lastDiff: 0,
+        });
 
         console.log(`♻️ ${p.name} restauré à ${p.elo}`);
       }
@@ -1024,41 +1036,66 @@ window.saveMatch = async function (event) {
   window.isSaving = true;
 
   const btn = event?.target;
+  const b1Input = document.getElementById("b1");
+  const b2Input = document.getElementById("b2");
+  const r1Input = document.getElementById("r1");
+  const r2Input = document.getElementById("r2");
+  const sbInput = document.getElementById("sb");
+  const srInput = document.getElementById("sr");
+
+  // 🧹 Nettoyer tout ancien message ou timer
+  clearScoreMessage?.();
+
+  // 🔄 Afficher immédiatement le message d'enregistrement
+  showScoreMessage?.("⏳ Enregistrement en cours...", "orange");
+
+  // 🔒 Désactiver tous les inputs et le bouton
   if (btn) btn.disabled = true;
+  [b1Input, b2Input, r1Input, r2Input, sbInput, srInput].forEach((inp) => {
+    if (inp) inp.disabled = true;
+  });
 
   try {
-    const sb = parseInt(document.getElementById("sb")?.value);
-    const sr = parseInt(document.getElementById("sr")?.value);
+    const sb = parseInt(sbInput?.value);
+    const sr = parseInt(srInput?.value);
 
-    const b1 = document.getElementById("b1")?.value;
-    const b2 = document.getElementById("b2")?.value;
-    const r1 = document.getElementById("r1")?.value;
-    const r2 = document.getElementById("r2")?.value;
+    const b1 = b1Input?.value;
+    const b2 = b2Input?.value;
+    const r1 = r1Input?.value;
+    const r2 = r2Input?.value;
 
     // =========================
     // 🔒 VALIDATION
     // =========================
     if (isNaN(sb) || isNaN(sr)) {
-      alert("Score invalide");
-      return;
+      showScoreMessage?.("❌ Score invalide", "red", 3000);
+      throw new Error("Score invalide");
     }
 
     if (sb === sr) {
-      alert("Match nul interdit");
-      return;
+      showScoreMessage?.("❌ Match nul interdit", "red", 3000);
+      throw new Error("Match nul interdit");
     }
 
     if (!b1 || !b2 || !r1 || !r2) {
-      alert("Tous les joueurs doivent être sélectionnés");
-      return;
+      showScoreMessage?.(
+        "❌ Tous les joueurs doivent être sélectionnés",
+        "red",
+        3000,
+      );
+      throw new Error("Joueurs non sélectionnés");
     }
 
     // =========================
     // ⏳ ANTI-SPAM
     // =========================
     if (Date.now() - (window.lastMatchSave || 0) < 10000) {
-      alert("⏳ Attends 10 secondes avant d'ajouter un nouveau match.");
-      return;
+      showScoreMessage?.(
+        "❌ Attends 10 secondes avant d'ajouter un nouveau match",
+        "red",
+        3000,
+      );
+      throw new Error("Attente anti-spam");
     }
 
     const match = {
@@ -1082,7 +1119,11 @@ window.saveMatch = async function (event) {
       const result = await updatePlayerStats(match);
       console.log("🧪 RESULT TEST :", result);
 
-      showScoreMessage("🧪 Match simulé", "orange");
+      showScoreMessage?.("🧪 Match simulé", "orange", 5000);
+
+      // 📝 Réinitialiser le formulaire en mode test aussi
+      resetScoreForm?.();
+
       return;
     }
 
@@ -1103,38 +1144,53 @@ window.saveMatch = async function (event) {
     // =========================
     // 💾 UPDATE MATCH
     // =========================
-   const safeResult = {
-  eloBefore: result?.eloBefore ?? {},
-  eloAfter: result?.eloAfter ?? {},
-  eloChange: result?.eloChange ?? {},
-};
+    const safeResult = {
+      eloBefore: result?.eloBefore ?? {},
+      eloAfter: result?.eloAfter ?? {},
+      eloChange: result?.eloChange ?? {},
+    };
 
-await safeUpdateDoc(matchRef, {
-  ...safeResult,
-  played: true,
-});
+    await safeUpdateDoc(matchRef, {
+      ...safeResult,
+      played: true,
+    });
 
-    showScoreMessage("✅ Match enregistré", "green");
+    // ✅ Afficher message de succès
+    showScoreMessage?.("✅ Match enregistré", "green", 5000);
 
-    await Promise.all([
-      loadRanking(),
-      loadMatches(),
-    ]);
+    // 📝 Réinitialiser le formulaire
+    resetScoreForm?.();
 
+    // 🔄 Recharger les données
+    await Promise.all([loadRanking?.(), loadMatches?.()]);
+
+    // 🚪 Fermer le modal après 5 secondes (cohérent avec le message)
+    setTimeout(() => {
+      closeModal("score");
+    }, 5000);
   } catch (e) {
-    console.error("saveMatch error :", e);
+    console.error("❌ saveMatch error :", e);
 
-    alert(
-      "Erreur : " +
-      (e?.message || e) +
-      "\nCode : " +
-      (e?.code || "aucun")
+    // ❌ Afficher l'erreur détaillée
+    const errorMsg = e?.message || e || "Erreur inconnue";
+    console.error("Détails de l'erreur :", errorMsg, e?.code || "");
+
+    showScoreMessage?.(
+      `❌ Erreur lors de l'enregistrement\n${errorMsg}`,
+      "red",
+      5000,
     );
-
   } finally {
     window.isSaving = false;
 
-    if (btn) btn.disabled = false;
+    // ✅ Réactiver les inputs et le bouton si l'utilisateur n'a pas fermé le modal
+    const scoreModal = document.getElementById("score");
+    if (scoreModal && scoreModal.style.display === "flex") {
+      if (btn) btn.disabled = false;
+      [b1Input, b2Input, r1Input, r2Input, sbInput, srInput].forEach((inp) => {
+        if (inp) inp.disabled = false;
+      });
+    }
   }
 };
 
@@ -1613,17 +1669,19 @@ async function updatePlayerStats(match) {
   const blueWin = match.sb > match.sr;
 
   const teamBleu = joueurs.filter((j) => [match.b1, match.b2].includes(j.name));
-  const teamRouge = joueurs.filter((j) => [match.r1, match.r2].includes(j.name));
+  const teamRouge = joueurs.filter((j) =>
+    [match.r1, match.r2].includes(j.name),
+  );
 
-  [...teamBleu, ...teamRouge].forEach(j => {
+  [...teamBleu, ...teamRouge].forEach((j) => {
     if (typeof j.elo !== "number" || isNaN(j.elo)) j.elo = 2000;
     if (typeof j.oldElo !== "number" || isNaN(j.oldElo)) j.oldElo = 2000;
   });
 
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
-  joueurs.forEach(j => {
-  j.history = j.history.filter(h => typeof h === "string");
-});
+  joueurs.forEach((j) => {
+    j.history = j.history.filter((h) => typeof h === "string");
+  });
 
   let simulationResult = [];
 
@@ -1657,12 +1715,18 @@ async function updatePlayerStats(match) {
       history: j.history,
     });
 
-     if (!isTestMode() && j.id) {
-      const safeElo = typeof newElo === "number" && !isNaN(newElo) ? Math.round(newElo) : 2000;
-      const safeOldElo = typeof oldElo === "number" && !isNaN(oldElo) ? Math.round(oldElo) : 2000;
+    if (!isTestMode() && j.id) {
+      const safeElo =
+        typeof newElo === "number" && !isNaN(newElo)
+          ? Math.round(newElo)
+          : 2000;
+      const safeOldElo =
+        typeof oldElo === "number" && !isNaN(oldElo)
+          ? Math.round(oldElo)
+          : 2000;
       const safeHistory = Array.isArray(j.history)
-  ? j.history.filter(h => typeof h === "string")
-  : [];
+        ? j.history.filter((h) => typeof h === "string")
+        : [];
       const payload = {
         wins: Number(wins) || 0,
         losses: Number(losses) || 0,
@@ -1677,7 +1741,7 @@ async function updatePlayerStats(match) {
       } catch (err) {
         console.error("❌ Erreur sauvegarde pour", j.name, ":", err.message);
       }
-    }  // ← fin du if
+    } // ← fin du if
   }
 
   return {
@@ -1694,10 +1758,18 @@ async function updatePlayerStats(match) {
       r2: Math.round(teamRouge[1]?.elo ?? 2000),
     },
     eloChange: {
-      b1: Math.round((teamBleu[0]?.elo ?? 2000) - (teamBleu[0]?.oldElo ?? 2000)),
-      b2: Math.round((teamBleu[1]?.elo ?? 2000) - (teamBleu[1]?.oldElo ?? 2000)),
-      r1: Math.round((teamRouge[0]?.elo ?? 2000) - (teamRouge[0]?.oldElo ?? 2000)),
-      r2: Math.round((teamRouge[1]?.elo ?? 2000) - (teamRouge[1]?.oldElo ?? 2000)),
+      b1: Math.round(
+        (teamBleu[0]?.elo ?? 2000) - (teamBleu[0]?.oldElo ?? 2000),
+      ),
+      b2: Math.round(
+        (teamBleu[1]?.elo ?? 2000) - (teamBleu[1]?.oldElo ?? 2000),
+      ),
+      r1: Math.round(
+        (teamRouge[0]?.elo ?? 2000) - (teamRouge[0]?.oldElo ?? 2000),
+      ),
+      r2: Math.round(
+        (teamRouge[1]?.elo ?? 2000) - (teamRouge[1]?.oldElo ?? 2000),
+      ),
     },
     debug: simulationResult,
   };
