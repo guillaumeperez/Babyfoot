@@ -1098,10 +1098,17 @@ window.saveMatch = async function (event) {
     });
 
     showScoreMessage("✅ Match enregistré", "green");
-  } catch (e) {
-    console.error("saveMatch error:", e);
-    alert("Erreur lors de l'enregistrement du match");
-  } finally {
+    await Promise.all([
+  loadRanking(),
+  loadMatches()
+]);
+  } alert(
+    "Erreur : " +
+    (e?.message || e) +
+    "\nCode : " +
+    (e?.code || "aucun")
+  );
+} finally {
     window.isSaving = false;
 
     if (btn) btn.disabled = false;
