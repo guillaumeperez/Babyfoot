@@ -1655,30 +1655,30 @@ async function updatePlayerStats(match) {
       history: j.history,
     });
 
-    // ✅ UN SEUL safeUpdateDoc, avec tous les champs sécurisés
     if (!isTestMode() && j.id) {
-      const safeElo = typeof newElo === "number" && !isNaN(newElo) ? Math.round(newElo) : 2000;
-      const safeOldElo = typeof oldElo === "number" && !isNaN(oldElo) ? Math.round(oldElo) : 2000;
-      const safeHistory = Array.isArray(j.history)
-        ? j.history.filter(h => h !== undefined && h !== null)
-        : [];
+  const safeElo = typeof newElo === "number" && !isNaN(newElo) ? Math.round(newElo) : 2000;
+  const safeOldElo = typeof oldElo === "number" && !isNaN(oldElo) ? Math.round(oldElo) : 2000;
+  const safeHistory = Array.isArray(j.history)
+    ? j.history.filter(h => h !== undefined && h !== null)
+    : [];
 
-      console.log("💾 Sauvegarde:", j.name, j.id, "elo:", safeElo);
+  const payload = {
+    wins: Number(wins) || 0,
+    losses: Number(losses) || 0,
+    elo: Number(safeElo) || 2000,
+    lastDiff: Number(safeElo - safeOldElo) || 0,
+    history: safeHistory,
+  };
 
-      try {
-        await safeUpdateDoc(doc(db, "players", j.id), {
-          wins: wins ?? 0,
-          losses: losses ?? 0,
-          elo: safeElo,
-          lastDiff: safeElo - safeOldElo,
-          history: safeHistory,
-        });
-        console.log("✅ Sauvegardé:", j.name);
-      } catch (err) {
-        console.error("❌ Erreur sauvegarde pour", j.name, ":", err.message);
-      }
-    }
+  console.log("💾 Sauvegarde:", j.name, j.id, JSON.stringify(payload));
+
+  try {
+    await safeUpdateDoc(doc(db, "players", j.id), payload);
+    console.log("✅ Sauvegardé:", j.name);
+  } catch (err) {
+    console.error("❌ Erreur sauvegarde pour", j.name, ":", err.message);
   }
+}
 
   return {
     eloBefore: {
