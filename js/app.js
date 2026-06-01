@@ -1020,8 +1020,6 @@ window.deleteTournament = async function (tournamentId) {
 // 💾 SAVE MATCH
 // =========================
 
-window.isSaving = false;
-
 window.saveMatch = async function (event) {
   if (window.isSaving) return;
   window.isSaving = true;
@@ -1038,7 +1036,6 @@ window.saveMatch = async function (event) {
     const r1 = document.getElementById("r1")?.value;
     const r2 = document.getElementById("r2")?.value;
 
-    // 🔒 VALIDATION MINIMALE
     if (isNaN(sb) || isNaN(sr)) {
       alert("Score invalide");
       return;
@@ -1054,7 +1051,6 @@ window.saveMatch = async function (event) {
       return;
     }
 
-    // ⏳ Anti-spam 10 secondes
     if (Date.now() - (window.lastMatchSave || 0) < 10000) {
       alert("⏳ Attends 10 secondes avant d'ajouter un nouveau match.");
       return;
@@ -1072,21 +1068,23 @@ window.saveMatch = async function (event) {
       createdAtLocal: Date.now(),
     };
 
-    // 🧪 MODE TEST = ZERO FIREBASE
     if (window.APP_MODE === "test") {
       console.log("🧪 MATCH TEST (NON ENREGISTRÉ)", match);
 
       const result = await updatePlayerStats(match);
+
       console.log("RESULT TEST :", result);
 
       showScoreMessage("🧪 Match simulé", "orange");
       return;
     }
 
-    // 🚀 Démarre le délai seulement avant l'enregistrement réel
     window.lastMatchSave = Date.now();
 
-    const matchRef = await safeAddDoc(collection(db, "matches"), match);
+    const matchRef = await safeAddDoc(
+      collection(db, "matches"),
+      match
+    );
 
     const result = await updatePlayerStats(match);
 
@@ -1098,25 +1096,29 @@ window.saveMatch = async function (event) {
     });
 
     showScoreMessage("✅ Match enregistré", "green");
+
     await Promise.all([
-  loadRanking(),
-  loadMatches()
-]);
+      loadRanking(),
+      loadMatches(),
+    ]);
+
   } catch (e) {
+    console.error("saveMatch error :", e);
 
-  alert(
-    "Erreur : " +
-    (e?.message || e) +
-    "\nCode : " +
-    (e?.code || "aucun")
-  );
+    alert(
+      "Erreur : " +
+        (e?.message || e) +
+        "\nCode : " +
+        (e?.code || "aucun")
+    );
 
-} finally {
+  } finally {
+    window.isSaving = false;
 
-  window.isSaving = false;
-
-  if (btn) btn.disabled = false;
-}
+    if (btn) {
+      btn.disabled = false;
+    }
+  }
 };
 
 // =========================
