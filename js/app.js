@@ -1102,17 +1102,21 @@ window.saveMatch = async function (event) {
   loadRanking(),
   loadMatches()
 ]);
-  } alert(
+  } catch (e) {
+
+  alert(
     "Erreur : " +
     (e?.message || e) +
     "\nCode : " +
     (e?.code || "aucun")
   );
-} finally {
-    window.isSaving = false;
 
-    if (btn) btn.disabled = false;
-  }
+} finally {
+
+  window.isSaving = false;
+
+  if (btn) btn.disabled = false;
+}
 };
 
 // =========================
