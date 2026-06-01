@@ -1582,7 +1582,10 @@ async function updatePlayerStats(match) {
 
   snapshot.forEach((d) => {
     const p = d.data();
+
+    // ✅ Ignore documents sans name ou sans elo valide (doublons corrompus)
     if (!p?.name) return;
+    if (typeof p.elo !== "number") return;
     if (!names.includes(p.name)) return;
 
     joueurs.push({
@@ -1597,21 +1600,27 @@ async function updatePlayerStats(match) {
     });
   });
 
+  // ✅ Dédoublonnage : garder uniquement le joueur avec ID auto-généré (le plus long)
+  const seen = new Map();
+  for (const j of joueurs) {
+    if (!seen.has(j.name) || j.id.length > seen.get(j.name).id.length) {
+      seen.set(j.name, j);
+    }
+  }
+  joueurs = Array.from(seen.values());
+
   console.log("Joueurs trouvés :", joueurs);
 
   const blueWin = match.sb > match.sr;
 
-  // ✅ Déclaration D'ABORD
   const teamBleu = joueurs.filter((j) => [match.b1, match.b2].includes(j.name));
   const teamRouge = joueurs.filter((j) => [match.r1, match.r2].includes(j.name));
 
-  // ✅ Sécurisation ENSUITE
   [...teamBleu, ...teamRouge].forEach(j => {
     if (typeof j.elo !== "number" || isNaN(j.elo)) j.elo = 2000;
     if (typeof j.oldElo !== "number" || isNaN(j.oldElo)) j.oldElo = 2000;
   });
 
-  // ✅ Calcul ELO UNE SEULE FOIS
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
 
   let simulationResult = [];
@@ -1646,30 +1655,28 @@ async function updatePlayerStats(match) {
       history: j.history,
     });
 
+    // ✅ UN SEUL safeUpdateDoc, avec tous les champs sécurisés
     if (!isTestMode() && j.id) {
-  const safeElo = typeof newElo === "number" && !isNaN(newElo) ? Math.round(newElo) : 2000;
-  const safeOldElo = typeof oldElo === "number" && !isNaN(oldElo) ? Math.round(oldElo) : 2000;
+      const safeElo = typeof newElo === "number" && !isNaN(newElo) ? Math.round(newElo) : 2000;
+      const safeOldElo = typeof oldElo === "number" && !isNaN(oldElo) ? Math.round(oldElo) : 2000;
+      const safeHistory = Array.isArray(j.history)
+        ? j.history.filter(h => h !== undefined && h !== null)
+        : [];
 
-  console.log("💾 Tentative sauvegarde:", j.name, j.id, "elo:", safeElo);
+      console.log("💾 Sauvegarde:", j.name, j.id, "elo:", safeElo);
 
-  await safeUpdateDoc(doc(db, "players", j.id), {
-    wins: wins ?? 0,
-    losses: losses ?? 0,
-    elo: safeElo,
-    lastDiff: safeElo - safeOldElo,
-    history: Array.isArray(j.history) ? j.history : [],
-  });
-
-  console.log("✅ Sauvegardé:", j.name);
-}
-
-      await safeUpdateDoc(doc(db, "players", j.id), {
-        wins: wins ?? 0,
-        losses: losses ?? 0,
-        elo: safeElo,
-        lastDiff: safeElo - safeOldElo,
-        history: Array.isArray(j.history) ? j.history : [],
-      });
+      try {
+        await safeUpdateDoc(doc(db, "players", j.id), {
+          wins: wins ?? 0,
+          losses: losses ?? 0,
+          elo: safeElo,
+          lastDiff: safeElo - safeOldElo,
+          history: safeHistory,
+        });
+        console.log("✅ Sauvegardé:", j.name);
+      } catch (err) {
+        console.error("❌ Erreur sauvegarde pour", j.name, ":", err.message);
+      }
     }
   }
 
