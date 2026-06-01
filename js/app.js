@@ -1589,7 +1589,6 @@ async function updatePlayerStats(match) {
     if (!names.includes(p.name)) return;
 
     joueurs.push({
-      ...p,
       id: d.id,
       name: p.name,
       oldElo: p.elo ?? 2000,
