@@ -1649,7 +1649,22 @@ async function updatePlayerStats(match) {
     if (!isTestMode() && j.id) {
       const safeElo = typeof newElo === "number" && !isNaN(newElo) ? Math.round(newElo) : 2000;
       const safeOldElo = typeof oldElo === "number" && !isNaN(oldElo) ? Math.round(oldElo) : 2000;
+if (!isTestMode() && j.id) {
+  const safeElo = typeof newElo === "number" && !isNaN(newElo) ? Math.round(newElo) : 2000;
+  const safeOldElo = typeof oldElo === "number" && !isNaN(oldElo) ? Math.round(oldElo) : 2000;
 
+  console.log("💾 Tentative sauvegarde:", j.name, j.id, "elo:", safeElo); // ← AJOUTE ÇA
+
+  await safeUpdateDoc(doc(db, "players", j.id), {
+    wins: wins ?? 0,
+    losses: losses ?? 0,
+    elo: safeElo,
+    lastDiff: safeElo - safeOldElo,
+    history: Array.isArray(j.history) ? j.history : [],
+  });
+
+  console.log("✅ Sauvegardé:", j.name); // ← ET ÇA
+}
       await safeUpdateDoc(doc(db, "players", j.id), {
         wins: wins ?? 0,
         losses: losses ?? 0,
