@@ -1545,6 +1545,7 @@ window.renderSeasonChart = function (data) {
 // 📊 UPDATE ELO
 // =========================
 async function updatePlayerStats(match) {
+  console.log("🔥 updatePlayerStats lancé");
   // 🔥 sécurité : ne jamais toucher tournoi
   if (match.type === "tournament") {
     console.log("🚫 Match tournoi ignoré ELO global");
@@ -1570,7 +1571,7 @@ async function updatePlayerStats(match) {
       });
     }
   });
-
+  console.log("Joueurs trouvés :", joueurs);
   const blueWin = match.sb > match.sr;
 
   const teamBleu = joueurs.filter((j) => [match.b1, match.b2].includes(j.name));
