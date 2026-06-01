@@ -1621,6 +1621,9 @@ async function updatePlayerStats(match) {
   });
 
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
+  joueurs.forEach(j => {
+  j.history = j.history.filter(h => typeof h === "string");
+});
 
   let simulationResult = [];
 
@@ -1658,8 +1661,8 @@ async function updatePlayerStats(match) {
       const safeElo = typeof newElo === "number" && !isNaN(newElo) ? Math.round(newElo) : 2000;
       const safeOldElo = typeof oldElo === "number" && !isNaN(oldElo) ? Math.round(oldElo) : 2000;
       const safeHistory = Array.isArray(j.history)
-        ? j.history.filter(h => h !== undefined && h !== null)
-        : [];
+  ? j.history.filter(h => typeof h === "string")
+  : [];
       const payload = {
         wins: Number(wins) || 0,
         losses: Number(losses) || 0,
