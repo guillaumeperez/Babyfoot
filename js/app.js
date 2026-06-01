@@ -1561,11 +1561,11 @@ window.renderSeasonChart = function (data) {
 };
 
 // =========================
-// 📊 UPDATE ELO
+// 📊 UPDATE ELO (FIXÉ)
 // =========================
 async function updatePlayerStats(match) {
   console.log("🔥 updatePlayerStats lancé");
-  // 🔥 sécurité : ne jamais toucher tournoi
+
   if (match.type === "tournament") {
     console.log("🚫 Match tournoi ignoré ELO global");
     return;
@@ -1573,42 +1573,50 @@ async function updatePlayerStats(match) {
 
   const snapshot = await safeGetDocs(collection(db, "players"));
 
+  const names = [match.b1, match.b2, match.r1, match.r2].filter(Boolean);
+
   let joueurs = [];
 
   snapshot.forEach((d) => {
     const p = d.data();
 
-    if ([match.b1, match.b2, match.r1, match.r2].includes(p.name)) {
-      joueurs.push({
-        ...p,
-        id: d.id,
-        oldElo: p.elo || 2000,
-        oldWins: p.wins || 0,
-        oldLosses: p.losses || 0,
-        oldHistory: [...(p.history || [])],
-        history: [...(p.history || [])],
-      });
-    }
+    if (!p?.name) return;
+    if (!names.includes(p.name)) return;
+
+    joueurs.push({
+      ...p,
+      id: d.id,
+      name: p.name,
+      oldElo: p.elo ?? 2000,
+      elo: p.elo ?? 2000,
+      wins: p.wins ?? 0,
+      losses: p.losses ?? 0,
+      history: Array.isArray(p.history) ? [...p.history] : [],
+    });
   });
+
   console.log("Joueurs trouvés :", joueurs);
+
   const blueWin = match.sb > match.sr;
 
-  const teamBleu = joueurs.filter((j) => [match.b1, match.b2].includes(j.name));
-
-  const teamRouge = joueurs.filter((j) =>
-    [match.r1, match.r2].includes(j.name),
+  const teamBleu = joueurs.filter((j) =>
+    [match.b1, match.b2].includes(j.name)
   );
 
+  const teamRouge = joueurs.filter((j) =>
+    [match.r1, match.r2].includes(j.name)
+  );
+
+  // ⚠️ ELO CALCUL
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
 
   let simulationResult = [];
 
   for (const j of joueurs) {
-    let wins = j.wins || 0;
-    let losses = j.losses || 0;
+    let wins = j.wins;
+    let losses = j.losses;
 
     const isBlue = [match.b1, match.b2].includes(j.name);
-
     const isWinner = (isBlue && blueWin) || (!isBlue && !blueWin);
 
     if (isWinner) {
@@ -1623,59 +1631,51 @@ async function updatePlayerStats(match) {
       j.history.shift();
     }
 
+    const oldElo = j.oldElo ?? 2000;
+    const newElo = j.elo ?? oldElo;
+
     simulationResult.push({
       name: j.name,
-      oldElo: j.oldElo,
-      newElo: j.elo,
-      diff: j.elo - j.oldElo,
+      oldElo,
+      newElo,
+      diff: newElo - oldElo,
       wins,
       losses,
       history: j.history,
     });
 
-    // 🚨 IMPORTANT
-    if (!isTestMode()) {
+    // 🚨 SAFE FIREBASE UPDATE (ANTI-UNDEFINED)
+    if (!isTestMode() && j.id) {
       await safeUpdateDoc(doc(db, "players", j.id), {
-        wins,
-        losses,
-        elo: j.elo,
-        lastDiff: Math.round(j.elo - j.oldElo),
-        history: j.history,
+        wins: wins ?? 0,
+        losses: losses ?? 0,
+        elo: newElo,
+        lastDiff: Math.round(newElo - oldElo),
+        history: Array.isArray(j.history) ? j.history : [],
       });
     }
   }
 
   return {
-    // 🔥 AVANT MATCH
     eloBefore: {
-      b1: Math.round(teamBleu[0]?.oldElo || 2000),
-      b2: Math.round(teamBleu[1]?.oldElo || 2000),
-      r1: Math.round(teamRouge[0]?.oldElo || 2000),
-      r2: Math.round(teamRouge[1]?.oldElo || 2000),
+      b1: Math.round(teamBleu[0]?.oldElo ?? 2000),
+      b2: Math.round(teamBleu[1]?.oldElo ?? 2000),
+      r1: Math.round(teamRouge[0]?.oldElo ?? 2000),
+      r2: Math.round(teamRouge[1]?.oldElo ?? 2000),
     },
 
-    // 🔥 APRÈS MATCH
     eloAfter: {
-      b1: Math.round(teamBleu[0]?.elo || 2000),
-      b2: Math.round(teamBleu[1]?.elo || 2000),
-      r1: Math.round(teamRouge[0]?.elo || 2000),
-      r2: Math.round(teamRouge[1]?.elo || 2000),
+      b1: Math.round(teamBleu[0]?.elo ?? 2000),
+      b2: Math.round(teamBleu[1]?.elo ?? 2000),
+      r1: Math.round(teamRouge[0]?.elo ?? 2000),
+      r2: Math.round(teamRouge[1]?.elo ?? 2000),
     },
 
-    // 🔥 DIFF
     eloChange: {
-      b1: Math.round(
-        (teamBleu[0]?.elo || 2000) - (teamBleu[0]?.oldElo || 2000),
-      ),
-      b2: Math.round(
-        (teamBleu[1]?.elo || 2000) - (teamBleu[1]?.oldElo || 2000),
-      ),
-      r1: Math.round(
-        (teamRouge[0]?.elo || 2000) - (teamRouge[0]?.oldElo || 2000),
-      ),
-      r2: Math.round(
-        (teamRouge[1]?.elo || 2000) - (teamRouge[1]?.oldElo || 2000),
-      ),
+      b1: Math.round((teamBleu[0]?.elo ?? 2000) - (teamBleu[0]?.oldElo ?? 2000)),
+      b2: Math.round((teamBleu[1]?.elo ?? 2000) - (teamBleu[1]?.oldElo ?? 2000)),
+      r1: Math.round((teamRouge[0]?.elo ?? 2000) - (teamRouge[0]?.oldElo ?? 2000)),
+      r2: Math.round((teamRouge[1]?.elo ?? 2000) - (teamRouge[1]?.oldElo ?? 2000)),
     },
 
     debug: simulationResult,
