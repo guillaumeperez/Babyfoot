@@ -3207,19 +3207,38 @@ window.loadPlayerEloTrend = async function () {
 };
 
 // =========================
-// �🚀 INIT
+// 🚀 INIT
 // =========================
 document.addEventListener("DOMContentLoaded", () => {
-  // 🔥 MODE TEST VISUEL
+  // =========================
+  // 🧪 MODE TEST / PROD
+  // =========================
   if (window.APP_MODE === "test") {
     document.body.style.border = "5px solid red";
-  }
-  if (window.APP_MODE === "test") {
     console.log("🧪 MODE TEST ACTIVÉ");
   } else {
     console.log("🚀 MODE PROD ACTIVÉ");
   }
 
+  // =========================
+  // 🧠 DEBUG CONSOLE (IMPORTANT)
+  // =========================
+  // permet de tester Firebase directement dans la console
+  if (typeof db !== "undefined") window.db = db;
+  if (typeof getDocs !== "undefined") window.getDocs = getDocs;
+  if (typeof collection !== "undefined") window.collection = collection;
+
+  // expose fonctions utiles pour debug manuel
+  window.loadMatches = loadMatches;
+  window.loadComments = loadComments;
+  window.loadPlayersSelect = loadPlayersSelect;
+  window.loadPlayersFilter = loadPlayersFilter;
+  window.loadPlayersTrendFilter = loadPlayersTrendFilter;
+  window.loadTournaments = loadTournaments;
+
+  // =========================
+  // 🚀 LOAD INITIAL DATA
+  // =========================
   loadMatches();
   loadComments();
   loadPlayersSelect();
