@@ -149,14 +149,19 @@ onAuthStateChanged(auth, (user) => {
   const badge = document.getElementById("adminBadge");
   const adminPlayersPanel = document.getElementById("adminPlayersPanel");
 
-  const isAdminUser = user && user.email === "guillaumeper34@gmail.com";
+  const adminUIDs = [
+  "KGtmZ1d8QzXlLpp2R1i1ofcIc3M2", // Guillaume
+  "tztIRHhnxXauNOly49ItKBoPnWn1"  // Baptiste
+  ];
+
+  const isAdminUser =
+    user && adminUIDs.includes(user.uid);
 
   window.isAdmin = !!isAdminUser;
 
   if (panel) panel.style.display = isAdminUser ? "block" : "none";
   if (badge) badge.style.display = isAdminUser ? "block" : "none";
 
-  // ⚠️ seulement si DOM existe
   if (adminPlayersPanel) {
     adminPlayersPanel.style.display = isAdminUser ? "block" : "none";
   }
