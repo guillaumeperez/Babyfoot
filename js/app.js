@@ -150,12 +150,11 @@ onAuthStateChanged(auth, (user) => {
   const adminPlayersPanel = document.getElementById("adminPlayersPanel");
 
   const adminUIDs = [
-  "KGtmZ1d8QzXlLpp2R1i1ofcIc3M2", // Guillaume
-  "tztIRHhnxXauNOly49ItKBoPnWn1"  // Baptiste
+    "KGtmZ1d8QzXlLpp2R1i1ofcIc3M2", // Guillaume
+    "Sc8mTNkuzARtAnxxzZcuH4hUrpj2", // Baptiste
   ];
 
-  const isAdminUser =
-    user && adminUIDs.includes(user.uid);
+  const isAdminUser = user && adminUIDs.includes(user.uid);
 
   window.isAdmin = !!isAdminUser;
 
