@@ -2,6 +2,12 @@
    🔧 MODALES
 ========================= */
 
+import { initAccordions } from "./src/ui/components/accordion.js";
+import {
+  openPlayerProfile,
+  closePlayerProfile,
+} from "./src/ui/pages/player-profile.page.js";
+
 let scrollY = 0;
 
 // Ouvre une modale
@@ -244,9 +250,9 @@ function openHistory() {
    👤 PROFIL JOUEUR
 ========================= */
 
-window.openPlayerProfile = function (name) {
-  alert("Profil de " + name);
-};
+// Fonctions exposées globalement pour les appels depuis le HTML
+window.openPlayerProfile = openPlayerProfile;
+window.closePlayerProfile = closePlayerProfile;
 
 /* =========================
    🏆 CLASSEMENT
@@ -259,26 +265,29 @@ function openRanking() {
   openModal("ranking");
 }
 
-document.querySelectorAll(".accordion").forEach((btn) => {
-  btn.addEventListener("click", function () {
-    this.classList.toggle("active");
+/* =========================
+   🎛️ ACCORDÉONS
+========================= */
 
-    const panel = this.nextElementSibling;
-
-    if (!panel) return;
-
-    if (panel.style.display === "block") {
-      panel.style.display = "none";
-    } else {
-      panel.style.display = "block";
-    }
-  });
+// Initialiser les accordéons au chargement du DOM
+document.addEventListener("DOMContentLoaded", () => {
+  initAccordions();
+  console.log("SCRIPT OK");
 });
 
 /* =========================
-   🚀 INIT
+   🌍 EXPOSITION GLOBALE - FONCTIONS PUBLIQUES
 ========================= */
 
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("SCRIPT OK");
-});
+// Rendre les fonctions accessibles depuis le HTML (attributs onclick, etc.)
+window.closeModal = closeModal;
+window.openModal = openModal;
+window.openRanking = openRanking;
+window.openHistory = openHistory;
+window.validatePlayer = validatePlayer;
+window.loadPendingRequests = loadPendingRequests;
+window.showScoreMessage = showScoreMessage;
+window.clearScoreMessage = clearScoreMessage;
+window.resetScoreForm = resetScoreForm;
+window.limitScore = limitScore;
+// openPlayerProfile et closePlayerProfile sont déjà exposés plus haut
