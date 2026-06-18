@@ -3,7 +3,10 @@
 // =========================
 // Actions réservées à l'admin : resets, archivage, activation/désactivation joueurs.
 
-import { getAllPlayers, togglePlayerActive } from "../../repositories/players.repository.js";
+import {
+  getAllPlayers,
+  togglePlayerActive,
+} from "../../repositories/players.repository.js";
 import { deleteAllMatches } from "../../repositories/matches.repository.js";
 import { deleteAllTournaments } from "../../repositories/tournaments.repository.js";
 import { archiveAndResetSeason } from "../../services/archive.service.js";
@@ -13,6 +16,7 @@ import { Toast } from "../components/toast.js";
 import { confirmAction } from "../components/confirm.js";
 import { loadRanking } from "../pages/ranking.page.js";
 import { loadMatches } from "../pages/matches.page.js";
+import { rebuildAllStats } from "../../services/player.service.js";
 
 // =========================
 // 🗑️ RESET MATCHS
@@ -165,3 +169,15 @@ export function openPlayersModalWithAdminPanel(isAdminUser) {
     loadAdminPlayers();
   }
 }
+export async function handleRebuildAllStats() {
+  if (!confirmAction("⚠️ Recalculer tous les ELO ?")) return;
+
+  await rebuildAllStats();
+
+  Toast.success("✅ Classement reconstruit");
+
+  await loadRanking();
+  await loadMatches();
+}
+
+window.rebuildAllStats = handleRebuildAllStats;

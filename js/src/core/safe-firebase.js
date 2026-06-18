@@ -2,7 +2,7 @@
 // 🛡️ SAFE FIREBASE WRAPPERS
 // =========================
 // Toutes les opérations d'écriture Firebase passent par ici.
-// En mode test, les écritures sont bloquées et loguées dans la console.
+// En mode test OU si FIREBASE_LOCK est activé, les écritures sont bloquées.
 // Les lectures (get) sont toujours autorisées.
 
 import {
@@ -16,43 +16,57 @@ import {
 
 import { isTestMode } from "./state.js";
 
+// 🔥 KILL SWITCH GLOBAL (sécurité ultime)
+const FIREBASE_LOCK = false;
+
+// =========================
+// 🧪 WRITE SAFE WRAPPERS
+// =========================
+
 export async function safeSetDoc(ref, data) {
-  if (isTestMode()) {
-    console.log("🧪 [TEST] setDoc bloqué →", data);
+  if (FIREBASE_LOCK || isTestMode()) {
+    console.log("🧪🛑 [BLOCKED] setDoc →", data);
     return null;
   }
-  return await setDoc(ref, data);
+
+  return setDoc(ref, data);
 }
 
 export async function safeAddDoc(ref, data) {
-  if (isTestMode()) {
-    console.log("🧪 [TEST] addDoc bloqué →", data);
-    return { id: "test-id-" + Date.now() };
+  if (FIREBASE_LOCK || isTestMode()) {
+    console.log("🧪🛑 [BLOCKED] addDoc →", data);
+    return null;
   }
-  return await addDoc(ref, data);
+
+  return addDoc(ref, data);
 }
 
 export async function safeUpdateDoc(ref, data) {
-  if (isTestMode()) {
-    console.log("🧪 [TEST] updateDoc bloqué →", data);
+  if (FIREBASE_LOCK || isTestMode()) {
+    console.log("🧪🛑 [BLOCKED] updateDoc →", data);
     return null;
   }
-  return await updateDoc(ref, data);
+
+  return updateDoc(ref, data);
 }
 
 export async function safeDeleteDoc(ref) {
-  if (isTestMode()) {
-    console.log("🧪 [TEST] deleteDoc bloqué");
+  if (FIREBASE_LOCK || isTestMode()) {
+    console.log("🧪🛑 [BLOCKED] deleteDoc");
     return null;
   }
-  return await deleteDoc(ref);
+
+  return deleteDoc(ref);
 }
 
-// Les lectures sont toujours autorisées (pas d'effet de bord)
+// =========================
+// 📖 READ SAFE WRAPPERS
+// =========================
+
 export async function safeGetDoc(ref) {
-  return await getDoc(ref);
+  return getDoc(ref);
 }
 
 export async function safeGetDocs(q) {
-  return await getDocs(q);
+  return getDocs(q);
 }

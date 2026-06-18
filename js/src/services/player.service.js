@@ -16,15 +16,17 @@ import {
   deleteRequest,
 } from "../repositories/requests.repository.js";
 
-import {
-  updatePlayer,
-} from "../repositories/players.repository.js";
+import { updatePlayer } from "../repositories/players.repository.js";
 
 import { updateElo2v2, buildEloSnapshot } from "./elo.service.js";
 
 import { APP_CONFIG } from "../config/app.config.js";
-import { normalizePlayerName, nameExistsInList } from "../utils/validation.utils.js";
+import {
+  normalizePlayerName,
+  nameExistsInList,
+} from "../utils/validation.utils.js";
 import { isTestMode } from "../core/state.js";
+import { getAllMatches } from "../repositories/matches.repository.js";
 
 // =========================
 // 📩 DEMANDES D'AJOUT
@@ -47,14 +49,19 @@ export async function requestNewPlayer(rawName) {
   if (nameExistsInList(name, pendingRequests)) {
     return {
       success: false,
-      message: "⚠️ Une demande pour ce joueur est déjà en attente de validation",
+      message:
+        "⚠️ Une demande pour ce joueur est déjà en attente de validation",
       level: "orange",
     };
   }
 
   const players = await getAllPlayers();
   if (nameExistsInList(name, players)) {
-    return { success: false, message: "❌ Ce joueur existe déjà", level: "red" };
+    return {
+      success: false,
+      message: "❌ Ce joueur existe déjà",
+      level: "red",
+    };
   }
 
   await createRequest(name);
@@ -133,12 +140,16 @@ export async function applyMatchResultToPlayers(match) {
   const blueWin = match.sb > match.sr;
 
   const teamBleu = joueurs.filter((j) => [match.b1, match.b2].includes(j.name));
-  const teamRouge = joueurs.filter((j) => [match.r1, match.r2].includes(j.name));
+  const teamRouge = joueurs.filter((j) =>
+    [match.r1, match.r2].includes(j.name),
+  );
 
   // Sécurité : ELO valides
   [...teamBleu, ...teamRouge].forEach((j) => {
-    if (typeof j.elo !== "number" || isNaN(j.elo)) j.elo = APP_CONFIG.DEFAULT_ELO;
-    if (typeof j.oldElo !== "number" || isNaN(j.oldElo)) j.oldElo = APP_CONFIG.DEFAULT_ELO;
+    if (typeof j.elo !== "number" || isNaN(j.elo))
+      j.elo = APP_CONFIG.DEFAULT_ELO;
+    if (typeof j.oldElo !== "number" || isNaN(j.oldElo))
+      j.oldElo = APP_CONFIG.DEFAULT_ELO;
   });
 
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
@@ -183,13 +194,15 @@ export async function applyMatchResultToPlayers(match) {
     });
 
     if (!isTestMode() && j.id) {
-      const safeElo = typeof newElo === "number" && !isNaN(newElo)
-        ? Math.round(newElo)
-        : APP_CONFIG.DEFAULT_ELO;
+      const safeElo =
+        typeof newElo === "number" && !isNaN(newElo)
+          ? Math.round(newElo)
+          : APP_CONFIG.DEFAULT_ELO;
 
-      const safeOldElo = typeof oldElo === "number" && !isNaN(oldElo)
-        ? Math.round(oldElo)
-        : APP_CONFIG.DEFAULT_ELO;
+      const safeOldElo =
+        typeof oldElo === "number" && !isNaN(oldElo)
+          ? Math.round(oldElo)
+          : APP_CONFIG.DEFAULT_ELO;
 
       const safeHistory = Array.isArray(j.history)
         ? j.history.filter((h) => typeof h === "string")
@@ -217,4 +230,76 @@ export async function applyMatchResultToPlayers(match) {
     ...snapshot,
     debug: simulationResult,
   };
+}
+// =========================
+// 🔧 REBUILD COMPLET DES STATS
+// =========================
+
+export async function rebuildAllStats() {
+  console.log("🔧 Recalcul complet des stats...");
+
+  const players = await getAllPlayers();
+
+  // =========================
+  // 🔁 RESET TO CLEAN STATE
+  // =========================
+  // IMPORTANT : on ne fait PAS de write async dans la boucle + logique stable
+
+  for (const p of players) {
+    await updatePlayer(p.id, {
+      elo: APP_CONFIG.DEFAULT_ELO, // 2000
+      wins: 0,
+      losses: 0,
+      lastDiff: 0,
+      history: [],
+    });
+  }
+
+  // =========================
+  // 📊 LOAD ALL MATCHES
+  // =========================
+
+  const matches = await getAllMatches();
+
+  // =========================
+  // 📅 SORT MATCHES (CRUCIAL FIX)
+  // =========================
+  // On sécurise le tri (timestamp fallback propre)
+
+  matches.sort((a, b) => {
+    const getTime = (m) => {
+      if (m.createdAt?.seconds) return m.createdAt.seconds;
+      if (m.createdAt?.toMillis) return m.createdAt.toMillis();
+      if (m.createdAtLocal) return m.createdAtLocal;
+      return 0;
+    };
+
+    return getTime(a) - getTime(b);
+  });
+
+  console.log(`📊 ${matches.length} matchs à rejouer`);
+
+  // =========================
+  // ⚽ REPLAY ALL MATCHES
+  // =========================
+  // IMPORTANT : on rejoue uniquement via applyMatchResultToPlayers
+
+  for (const match of matches) {
+    try {
+      // sécurité minimale
+      if (!match.b1 || !match.b2 || !match.r1 || !match.r2) continue;
+      if (match.sb == null || match.sr == null) continue;
+
+      await applyMatchResultToPlayers(match);
+    } catch (err) {
+      console.error(`❌ Erreur sur le match ${match.id}`, err);
+    }
+  }
+
+  // =========================
+  // ✅ END
+  // =========================
+
+  console.log("✅ Recalcul terminé");
+  return true;
 }
