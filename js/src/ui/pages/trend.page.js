@@ -1,118 +1,126 @@
 // =========================
 // 📈 TREND PAGE
 // =========================
-// Graphique de tendance ELO pour un ou deux joueurs, basé sur l'historique des matchs.
-
 import { getAllMatches } from "../../repositories/matches.repository.js";
 import { getAllPlayers } from "../../repositories/players.repository.js";
+import { APP_CONFIG } from "../../config/app.config.js";
 
 let eloChartInstance = null;
-
-// =========================
-// 🔥 SELECT JOUEURS (tendance)
-// =========================
 
 export async function loadPlayersTrendFilter() {
   const select1 = document.getElementById("trendPlayerFilter");
   const select2 = document.getElementById("trendPlayerFilter2");
-
   if (!select1 || !select2) return;
 
   select1.innerHTML = "<option value=''>-- Joueur 1 --</option>";
   select2.innerHTML = "<option value=''>-- Joueur 2 (optionnel) --</option>";
 
   const players = await getAllPlayers();
-
   players.forEach((p) => {
-    const option1 = document.createElement("option");
-    option1.value = p.name;
-    option1.textContent = p.name;
-
-    const option2 = document.createElement("option");
-    option2.value = p.name;
-    option2.textContent = p.name;
-
-    select1.appendChild(option1);
-    select2.appendChild(option2);
+    [select1, select2].forEach((sel) => {
+      const opt = document.createElement("option");
+      opt.value = p.name;
+      opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
   });
 }
 
 // =========================
-// 🔥 GRAPHIQUE DE TENDANCE
+// 🔍 EXTRACTION HISTORIQUE
 // =========================
-
 function extractPlayerEloHistory(matches, playerNameLower) {
   const history = [];
   const labels = [];
   let step = 0;
+  let startAdded = false;
 
-  matches.forEach((m) => {
-    if (!m.eloAfter) return;
+  for (const m of matches) {
+    if (!m.eloBefore || !m.eloAfter) continue;
 
-    const players = {
+    const posMap = {
       b1: m.b1?.toLowerCase(),
       b2: m.b2?.toLowerCase(),
       r1: m.r1?.toLowerCase(),
       r2: m.r2?.toLowerCase(),
     };
 
-    let changed = false;
+    const pos = Object.keys(posMap).find(
+      (key) => posMap[key] === playerNameLower,
+    );
 
-    if (players.b1 === playerNameLower) {
-      history.push(m.eloAfter.b1);
-      changed = true;
-    } else if (players.b2 === playerNameLower) {
-      history.push(m.eloAfter.b2);
-      changed = true;
-    } else if (players.r1 === playerNameLower) {
-      history.push(m.eloAfter.r1);
-      changed = true;
-    } else if (players.r2 === playerNameLower) {
-      history.push(m.eloAfter.r2);
-      changed = true;
+    if (!pos) continue;
+
+    const eloBefore = m.eloBefore[pos];
+    const eloAfter = m.eloAfter[pos];
+
+    console.log(
+      `Match ${step + 1}`,
+      "Position :",
+      pos,
+      "Avant :",
+      eloBefore,
+      "Après :",
+      eloAfter,
+    );
+
+    if (eloBefore == null || eloAfter == null) continue;
+
+    if (!startAdded) {
+      history.push(eloBefore);
+      labels.push("Départ");
+      startAdded = true;
     }
 
-    if (changed) {
-      step++;
-      labels.push(`M${step}`);
-    }
-  });
+    step++;
+    history.push(eloAfter);
+    labels.push(`M${step}`);
+  }
 
   return { history, labels };
 }
 
-/**
- * Charge l'historique ELO d'un ou deux joueurs (sélectionnés dans
- * #trendPlayerFilter / #trendPlayerFilter2) et affiche le graphique #eloChart.
- */
+// =========================
+// 📈 CHARGEMENT DU GRAPHIQUE
+// =========================
 export async function loadPlayerEloTrend() {
-  const p1 = document.getElementById("trendPlayerFilter")?.value?.toLowerCase();
-  const p2 = document.getElementById("trendPlayerFilter2")?.value?.toLowerCase();
+  const p1 = document
+    .getElementById("trendPlayerFilter")
+    ?.value?.trim()
+    .toLowerCase();
+  const p2 = document
+    .getElementById("trendPlayerFilter2")
+    ?.value?.trim()
+    .toLowerCase();
 
   if (!p1 && !p2) return;
 
-  // Les matchs doivent être triés par date croissante pour une courbe lisible
+  // getAllMatches() retourne desc → on inverse pour avoir asc
   const allMatches = await getAllMatches();
-  const matches = [...allMatches].reverse(); // getAllMatches() est desc -> on inverse
+  const matches = [...allMatches].reverse();
 
-  const result1 = p1 ? extractPlayerEloHistory(matches, p1) : { history: [], labels: [] };
-  const result2 = p2 ? extractPlayerEloHistory(matches, p2) : { history: [], labels: [] };
+  const result1 = p1
+    ? extractPlayerEloHistory(matches, p1)
+    : { history: [], labels: [] };
+  const result2 = p2
+    ? extractPlayerEloHistory(matches, p2)
+    : { history: [], labels: [] };
 
-  // On prend les labels du jeu de données le plus complet pour l'axe X
-  const labels = result1.labels.length >= result2.labels.length ? result1.labels : result2.labels;
+  const labels =
+    result1.labels.length >= result2.labels.length
+      ? result1.labels
+      : result2.labels;
 
   const ctx = document.getElementById("eloChart")?.getContext("2d");
   if (!ctx) return;
 
-  if (eloChartInstance) {
-    eloChartInstance.destroy();
-  }
+  if (eloChartInstance) eloChartInstance.destroy();
 
   const datasets = [];
 
-  if (p1) {
+  if (p1 && result1.history.length > 0) {
     datasets.push({
-      label: p1,
+      label: document.getElementById("trendPlayerFilter")?.value, // nom original
       data: result1.history,
       borderColor: "#3b82f6",
       backgroundColor: "rgba(59,130,246,0.12)",
@@ -124,9 +132,9 @@ export async function loadPlayerEloTrend() {
     });
   }
 
-  if (p2) {
+  if (p2 && result2.history.length > 0) {
     datasets.push({
-      label: p2,
+      label: document.getElementById("trendPlayerFilter2")?.value,
       data: result2.history,
       borderColor: "#ef4444",
       backgroundColor: "rgba(239,68,68,0.12)",
@@ -149,7 +157,16 @@ export async function loadPlayerEloTrend() {
         legend: { display: true },
         tooltip: {
           callbacks: {
-            label: (context) => `ELO : ${context.parsed.y}`,
+            // Affiche eloBefore → eloAfter pour chaque point
+            label: (context) => {
+              const idx = context.dataIndex;
+              const val = context.parsed.y;
+              const prev = context.dataset.data[idx - 1];
+              if (idx === 0 || prev == null) return `ELO départ : ${val}`;
+              const diff = val - prev;
+              const sign = diff >= 0 ? "+" : "";
+              return `ELO : ${val} (${sign}${diff})`;
+            },
           },
         },
       },

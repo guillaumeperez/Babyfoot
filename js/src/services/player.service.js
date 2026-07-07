@@ -26,7 +26,10 @@ import {
   nameExistsInList,
 } from "../utils/validation.utils.js";
 import { isTestMode } from "../core/state.js";
-import { getAllMatches } from "../repositories/matches.repository.js";
+import {
+  getAllMatches,
+  updateMatch,
+} from "../repositories/matches.repository.js";
 
 // =========================
 // 📩 DEMANDES D'AJOUT
@@ -290,7 +293,16 @@ export async function rebuildAllStats() {
       if (!match.b1 || !match.b2 || !match.r1 || !match.r2) continue;
       if (match.sb == null || match.sr == null) continue;
 
-      await applyMatchResultToPlayers(match);
+      const result = await applyMatchResultToPlayers(match);
+
+      if (!isTestMode() && match.id && result) {
+        await updateMatch(match.id, {
+          eloBefore: result.eloBefore ?? {},
+          eloAfter: result.eloAfter ?? {},
+          eloChange: result.eloChange ?? {},
+          played: true,
+        });
+      }
     } catch (err) {
       console.error(`❌ Erreur sur le match ${match.id}`, err);
     }
