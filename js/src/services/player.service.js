@@ -329,7 +329,19 @@ export async function rebuildAllStats() {
 
       if (joueurs.length === 0) continue;
 
+      console.log(
+        "BAPTISTE AVANT",
+        match.createdAtLocal,
+        playersState.find((p) => p.name === "Baptiste")?.elo,
+      );
+
       const result = calculateMatchResultForState(match, joueurs);
+
+      console.log(
+        "BAPTISTE APRES",
+        match.createdAtLocal,
+        playersState.find((p) => p.name === "Baptiste")?.elo,
+      );
 
       if (!isTestMode() && match.id && result?.snapshot) {
         await updateMatch(match.id, {
