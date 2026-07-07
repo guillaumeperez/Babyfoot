@@ -95,51 +95,61 @@ export async function rejectPlayerRequest(requestId) {
 // 📊 STATS APRÈS MATCH
 // =========================
 
-/**
- * Calcule et applique les nouvelles stats ELO/wins/losses/history
- * pour les 4 joueurs d'un match classique.
- *
- * Effectue les écritures Firestore (sauf en mode test).
- *
- * @param {{ b1, b2, r1, r2, sb, sr, type }} match
- * @returns {{ eloBefore, eloAfter, eloChange, debug }}
- */
-export async function applyMatchResultToPlayers(match) {
-  if (match.type === "tournament") {
-    console.log("🚫 Match tournoi ignoré ELO global");
-    return null;
-  }
-
-  const allPlayers = await getAllPlayers();
+function buildPlayersStateFromSnapshot(players, match) {
   const names = [match.b1, match.b2, match.r1, match.r2].filter(Boolean);
+  const stateByName = new Map();
 
-  let joueurs = [];
-
-  for (const p of allPlayers) {
+  for (const p of players) {
     if (!p?.name) continue;
-    if (typeof p.elo !== "number") continue;
+    if (typeof p.elo !== "number" || isNaN(p.elo)) continue;
     if (!names.includes(p.name)) continue;
 
-    joueurs.push({
+    const candidate = {
       id: p.id,
       name: p.name,
       oldElo: p.elo ?? APP_CONFIG.DEFAULT_ELO,
       elo: p.elo ?? APP_CONFIG.DEFAULT_ELO,
       wins: p.wins ?? 0,
       losses: p.losses ?? 0,
-      history: Array.isArray(p.history) ? [...p.history] : [],
-    });
-  }
+      history: Array.isArray(p.history)
+        ? p.history.filter((h) => typeof h === "string")
+        : [],
+    };
 
-  // Dédoublonnage : garder le joueur avec l'ID le plus long (auto-généré)
-  const seen = new Map();
-  for (const j of joueurs) {
-    if (!seen.has(j.name) || j.id.length > seen.get(j.name).id.length) {
-      seen.set(j.name, j);
+    const existing = stateByName.get(p.name);
+    if (!existing || (candidate.id?.length ?? 0) > (existing.id?.length ?? 0)) {
+      stateByName.set(p.name, candidate);
     }
   }
-  joueurs = Array.from(seen.values());
 
+  return Array.from(stateByName.values());
+}
+
+function buildInitialMemoryPlayersState(players) {
+  const stateByName = new Map();
+
+  for (const p of players) {
+    if (!p?.name) continue;
+
+    const candidate = {
+      id: p.id,
+      name: p.name,
+      elo: APP_CONFIG.DEFAULT_ELO,
+      wins: 0,
+      losses: 0,
+      history: [],
+    };
+
+    const existing = stateByName.get(p.name);
+    if (!existing || (candidate.id?.length ?? 0) > (existing.id?.length ?? 0)) {
+      stateByName.set(p.name, candidate);
+    }
+  }
+
+  return Array.from(stateByName.values());
+}
+
+function calculateMatchResultForState(match, joueurs) {
   const blueWin = match.sb > match.sr;
 
   const teamBleu = joueurs.filter((j) => [match.b1, match.b2].includes(j.name));
@@ -147,17 +157,24 @@ export async function applyMatchResultToPlayers(match) {
     [match.r1, match.r2].includes(j.name),
   );
 
-  // Sécurité : ELO valides
-  [...teamBleu, ...teamRouge].forEach((j) => {
-    if (typeof j.elo !== "number" || isNaN(j.elo))
+  joueurs.forEach((j) => {
+    if (typeof j.elo !== "number" || isNaN(j.elo)) {
       j.elo = APP_CONFIG.DEFAULT_ELO;
-    if (typeof j.oldElo !== "number" || isNaN(j.oldElo))
+    }
+
+    j.oldElo = j.elo;
+
+    if (typeof j.oldElo !== "number" || isNaN(j.oldElo)) {
       j.oldElo = APP_CONFIG.DEFAULT_ELO;
+    }
+
+    if (!Array.isArray(j.history)) {
+      j.history = [];
+    }
   });
 
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
 
-  // Garde uniquement les entrées d'historique au format string (🟢/🔴)
   joueurs.forEach((j) => {
     j.history = j.history.filter((h) => typeof h === "string");
   });
@@ -165,8 +182,8 @@ export async function applyMatchResultToPlayers(match) {
   const simulationResult = [];
 
   for (const j of joueurs) {
-    let wins = j.wins;
-    let losses = j.losses;
+    let wins = Number(j.wins) || 0;
+    let losses = Number(j.losses) || 0;
 
     const isBlue = [match.b1, match.b2].includes(j.name);
     const isWinner = (isBlue && blueWin) || (!isBlue && !blueWin);
@@ -183,6 +200,9 @@ export async function applyMatchResultToPlayers(match) {
       j.history.shift();
     }
 
+    j.wins = wins;
+    j.losses = losses;
+
     const oldElo = j.oldElo ?? APP_CONFIG.DEFAULT_ELO;
     const newElo = j.elo ?? oldElo;
 
@@ -195,16 +215,57 @@ export async function applyMatchResultToPlayers(match) {
       losses,
       history: j.history,
     });
+  }
 
-    if (!isTestMode() && j.id) {
+  const snapshot = buildEloSnapshot(teamBleu, teamRouge);
+
+  return {
+    snapshot,
+    debug: simulationResult,
+  };
+}
+
+/**
+ * Calcule et applique les nouvelles stats ELO/wins/losses/history
+ * pour les 4 joueurs d'un match classique.
+ *
+ * Effectue les écritures Firestore (sauf en mode test).
+ *
+ * @param {{ b1, b2, r1, r2, sb, sr, type }} match
+ * @returns {{ eloBefore, eloAfter, eloChange, debug }}
+ */
+export async function applyMatchResultToPlayers(match) {
+  if (match.type === "tournament") {
+    console.log("🚫 Match tournoi ignoré ELO global");
+    return null;
+  }
+
+  const allPlayers = await getAllPlayers();
+  const joueurs = buildPlayersStateFromSnapshot(allPlayers, match);
+
+  if (joueurs.length === 0) {
+    return {
+      eloBefore: {},
+      eloAfter: {},
+      eloChange: {},
+      debug: [],
+    };
+  }
+
+  const result = calculateMatchResultForState(match, joueurs);
+
+  if (!isTestMode()) {
+    for (const j of joueurs) {
+      if (!j.id) continue;
+
       const safeElo =
-        typeof newElo === "number" && !isNaN(newElo)
-          ? Math.round(newElo)
+        typeof j.elo === "number" && !isNaN(j.elo)
+          ? Math.round(j.elo)
           : APP_CONFIG.DEFAULT_ELO;
 
       const safeOldElo =
-        typeof oldElo === "number" && !isNaN(oldElo)
-          ? Math.round(oldElo)
+        typeof j.oldElo === "number" && !isNaN(j.oldElo)
+          ? Math.round(j.oldElo)
           : APP_CONFIG.DEFAULT_ELO;
 
       const safeHistory = Array.isArray(j.history)
@@ -212,8 +273,8 @@ export async function applyMatchResultToPlayers(match) {
         : [];
 
       const payload = {
-        wins: Number(wins) || 0,
-        losses: Number(losses) || 0,
+        wins: Number(j.wins) || 0,
+        losses: Number(j.losses) || 0,
         elo: Number(safeElo) || APP_CONFIG.DEFAULT_ELO,
         lastDiff: Number(safeElo - safeOldElo) || 0,
         history: safeHistory,
@@ -227,11 +288,9 @@ export async function applyMatchResultToPlayers(match) {
     }
   }
 
-  const snapshot = buildEloSnapshot(teamBleu, teamRouge);
-
   return {
-    ...snapshot,
-    debug: simulationResult,
+    ...result.snapshot,
+    debug: result.debug,
   };
 }
 // =========================
@@ -242,37 +301,14 @@ export async function rebuildAllStats() {
   console.log("🔧 Recalcul complet des stats...");
 
   const players = await getAllPlayers();
-
-  // =========================
-  // 🔁 RESET TO CLEAN STATE
-  // =========================
-  // IMPORTANT : on ne fait PAS de write async dans la boucle + logique stable
-
-  for (const p of players) {
-    await updatePlayer(p.id, {
-      elo: APP_CONFIG.DEFAULT_ELO, // 2000
-      wins: 0,
-      losses: 0,
-      lastDiff: 0,
-      history: [],
-    });
-  }
-
-  // =========================
-  // 📊 LOAD ALL MATCHES
-  // =========================
+  const playersState = buildInitialMemoryPlayersState(players);
 
   const matches = await getAllMatches();
 
-  // =========================
-  // 📅 SORT MATCHES (CRUCIAL FIX)
-  // =========================
-  // On sécurise le tri (timestamp fallback propre)
-
   matches.sort((a, b) => {
     const getTime = (m) => {
-      if (m.createdAt?.seconds) return m.createdAt.seconds;
       if (m.createdAt?.toMillis) return m.createdAt.toMillis();
+      if (m.createdAt?.seconds) return m.createdAt.seconds * 1000;
       if (m.createdAtLocal) return m.createdAtLocal;
       return 0;
     };
@@ -282,24 +318,24 @@ export async function rebuildAllStats() {
 
   console.log(`📊 ${matches.length} matchs à rejouer`);
 
-  // =========================
-  // ⚽ REPLAY ALL MATCHES
-  // =========================
-  // IMPORTANT : on rejoue uniquement via applyMatchResultToPlayers
-
   for (const match of matches) {
     try {
-      // sécurité minimale
       if (!match.b1 || !match.b2 || !match.r1 || !match.r2) continue;
       if (match.sb == null || match.sr == null) continue;
+      if (match.type === "tournament") continue;
 
-      const result = await applyMatchResultToPlayers(match);
+      const names = [match.b1, match.b2, match.r1, match.r2].filter(Boolean);
+      const joueurs = playersState.filter((p) => names.includes(p.name));
 
-      if (!isTestMode() && match.id && result) {
+      if (joueurs.length === 0) continue;
+
+      const result = calculateMatchResultForState(match, joueurs);
+
+      if (!isTestMode() && match.id && result?.snapshot) {
         await updateMatch(match.id, {
-          eloBefore: result.eloBefore ?? {},
-          eloAfter: result.eloAfter ?? {},
-          eloChange: result.eloChange ?? {},
+          eloBefore: result.snapshot.eloBefore ?? {},
+          eloAfter: result.snapshot.eloAfter ?? {},
+          eloChange: result.snapshot.eloChange ?? {},
           played: true,
         });
       }
@@ -308,9 +344,33 @@ export async function rebuildAllStats() {
     }
   }
 
-  // =========================
-  // ✅ END
-  // =========================
+  if (!isTestMode()) {
+    for (const playerState of playersState) {
+      if (!playerState.id) continue;
+
+      const safeElo =
+        typeof playerState.elo === "number" && !isNaN(playerState.elo)
+          ? Math.round(playerState.elo)
+          : APP_CONFIG.DEFAULT_ELO;
+
+      const safeOldElo =
+        typeof playerState.oldElo === "number" && !isNaN(playerState.oldElo)
+          ? Math.round(playerState.oldElo)
+          : APP_CONFIG.DEFAULT_ELO;
+
+      const safeHistory = Array.isArray(playerState.history)
+        ? playerState.history.filter((h) => typeof h === "string")
+        : [];
+
+      await updatePlayer(playerState.id, {
+        elo: Number(safeElo) || APP_CONFIG.DEFAULT_ELO,
+        wins: Number(playerState.wins) || 0,
+        losses: Number(playerState.losses) || 0,
+        lastDiff: Number(safeElo - safeOldElo) || 0,
+        history: safeHistory,
+      });
+    }
+  }
 
   console.log("✅ Recalcul terminé");
   return true;
