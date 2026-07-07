@@ -149,6 +149,45 @@ function buildInitialMemoryPlayersState(players) {
   return Array.from(stateByName.values());
 }
 
+function buildSnapshotFromMemoryState(match, joueurs) {
+  const playerByName = new Map(joueurs.map((j) => [j.name, j]));
+
+  const getBefore = (name) => {
+    const player = playerByName.get(name);
+    return typeof player?.oldElo === "number" && !isNaN(player.oldElo)
+      ? Math.round(player.oldElo)
+      : APP_CONFIG.DEFAULT_ELO;
+  };
+
+  const getAfter = (name) => {
+    const player = playerByName.get(name);
+    return typeof player?.elo === "number" && !isNaN(player.elo)
+      ? Math.round(player.elo)
+      : APP_CONFIG.DEFAULT_ELO;
+  };
+
+  return {
+    eloBefore: {
+      b1: getBefore(match.b1),
+      b2: getBefore(match.b2),
+      r1: getBefore(match.r1),
+      r2: getBefore(match.r2),
+    },
+    eloAfter: {
+      b1: getAfter(match.b1),
+      b2: getAfter(match.b2),
+      r1: getAfter(match.r1),
+      r2: getAfter(match.r2),
+    },
+    eloChange: {
+      b1: getAfter(match.b1) - getBefore(match.b1),
+      b2: getAfter(match.b2) - getBefore(match.b2),
+      r1: getAfter(match.r1) - getBefore(match.r1),
+      r2: getAfter(match.r2) - getBefore(match.r2),
+    },
+  };
+}
+
 function calculateMatchResultForState(match, joueurs) {
   const blueWin = match.sb > match.sr;
 
@@ -217,7 +256,7 @@ function calculateMatchResultForState(match, joueurs) {
     });
   }
 
-  const snapshot = buildEloSnapshot(teamBleu, teamRouge);
+  const snapshot = buildSnapshotFromMemoryState(match, joueurs);
 
   return {
     snapshot,
@@ -344,6 +383,14 @@ export async function rebuildAllStats() {
       );
 
       if (!isTestMode() && match.id && result?.snapshot) {
+        console.log(
+          "WRITE MATCH SNAPSHOT",
+          match.id,
+          result.snapshot.eloBefore,
+          result.snapshot.eloAfter,
+          result.snapshot.eloChange,
+        );
+
         await updateMatch(match.id, {
           eloBefore: result.snapshot.eloBefore ?? {},
           eloAfter: result.snapshot.eloAfter ?? {},
