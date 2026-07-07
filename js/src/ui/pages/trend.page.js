@@ -95,13 +95,27 @@ export async function loadPlayerEloTrend() {
 
   if (!p1 && !p2) return;
 
-  // getAllMatches() retourne desc → on inverse pour avoir asc
+  // =========================
+  // 📅 CHARGEMENT DES MATCHS
+  // =========================
+  // On trie toujours par date réelle : ancien → récent
   const allMatches = await getAllMatches();
-  const matches = [...allMatches].reverse();
+
+  const matches = [...allMatches].sort((a, b) => {
+    const getTime = (m) => {
+      if (m.createdAt?.toMillis) return m.createdAt.toMillis();
+      if (m.createdAt?.seconds) return m.createdAt.seconds * 1000;
+      if (m.createdAtLocal) return m.createdAtLocal;
+      return 0;
+    };
+
+    return getTime(a) - getTime(b);
+  });
 
   const result1 = p1
     ? extractPlayerEloHistory(matches, p1)
     : { history: [], labels: [] };
+
   const result2 = p2
     ? extractPlayerEloHistory(matches, p2)
     : { history: [], labels: [] };
