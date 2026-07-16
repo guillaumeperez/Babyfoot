@@ -95,6 +95,10 @@ export async function rejectPlayerRequest(requestId) {
 // 📊 STATS APRÈS MATCH
 // =========================
 
+function getPlayerStateKey(name) {
+  return normalizePlayerName(name)?.toLowerCase();
+}
+
 function buildPlayersStateFromSnapshot(players, match) {
   const names = [match.b1, match.b2, match.r1, match.r2].filter(Boolean);
   const stateByName = new Map();
@@ -149,18 +153,23 @@ function buildInitialMemoryPlayersState(players) {
   return Array.from(stateByName.values());
 }
 
-function buildSnapshotFromMemoryState(match, joueurs) {
-  const playerByName = new Map(joueurs.map((j) => [j.name, j]));
+function buildSnapshotFromMemoryState(match, playersState) {
+  const playerByName = new Map(
+    (Array.isArray(playersState) ? playersState : []).map((player) => [
+      getPlayerStateKey(player?.name),
+      player,
+    ]),
+  );
 
   const getBefore = (name) => {
-    const player = playerByName.get(name);
+    const player = playerByName.get(getPlayerStateKey(name));
     return typeof player?.oldElo === "number" && !isNaN(player.oldElo)
       ? Math.round(player.oldElo)
       : APP_CONFIG.DEFAULT_ELO;
   };
 
   const getAfter = (name) => {
-    const player = playerByName.get(name);
+    const player = playerByName.get(getPlayerStateKey(name));
     return typeof player?.elo === "number" && !isNaN(player.elo)
       ? Math.round(player.elo)
       : APP_CONFIG.DEFAULT_ELO;
@@ -188,13 +197,34 @@ function buildSnapshotFromMemoryState(match, joueurs) {
   };
 }
 
-function calculateMatchResultForState(match, joueurs) {
+function calculateMatchResultForState(match, playersState) {
+  const names = [match.b1, match.b2, match.r1, match.r2]
+    .filter(Boolean)
+    .map(getPlayerStateKey);
+
+  const joueurs = (Array.isArray(playersState) ? playersState : []).filter(
+    (player) => {
+      const playerKey = getPlayerStateKey(player?.name);
+      return playerKey && names.includes(playerKey);
+    },
+  );
+
   const blueWin = match.sb > match.sr;
 
-  const teamBleu = joueurs.filter((j) => [match.b1, match.b2].includes(j.name));
-  const teamRouge = joueurs.filter((j) =>
-    [match.r1, match.r2].includes(j.name),
-  );
+  const teamBleu = joueurs.filter((j) => {
+    const playerKey = getPlayerStateKey(j.name);
+    return (
+      names.includes(playerKey) &&
+      [match.b1, match.b2].some((name) => getPlayerStateKey(name) === playerKey)
+    );
+  });
+  const teamRouge = joueurs.filter((j) => {
+    const playerKey = getPlayerStateKey(j.name);
+    return (
+      names.includes(playerKey) &&
+      [match.r1, match.r2].some((name) => getPlayerStateKey(name) === playerKey)
+    );
+  });
 
   joueurs.forEach((j) => {
     if (typeof j.elo !== "number" || isNaN(j.elo)) {
@@ -256,7 +286,7 @@ function calculateMatchResultForState(match, joueurs) {
     });
   }
 
-  const snapshot = buildSnapshotFromMemoryState(match, joueurs);
+  const snapshot = buildSnapshotFromMemoryState(match, playersState);
 
   return {
     snapshot,
@@ -363,26 +393,10 @@ export async function rebuildAllStats() {
       if (match.sb == null || match.sr == null) continue;
       if (match.type === "tournament") continue;
 
-      const names = [match.b1, match.b2, match.r1, match.r2].filter(Boolean);
-      const joueurs = playersState.filter((p) => names.includes(p.name));
-
-      if (joueurs.length === 0) continue;
-
-      console.log(
-        "BAPTISTE AVANT",
-        match.createdAtLocal,
-        playersState.find((p) => p.name === "Baptiste")?.elo,
-      );
-
-      const result = calculateMatchResultForState(match, joueurs);
-
-      console.log(
-        "BAPTISTE APRES",
-        match.createdAtLocal,
-        playersState.find((p) => p.name === "Baptiste")?.elo,
-      );
+      const result = calculateMatchResultForState(match, playersState);
 
       if (!isTestMode() && match.id && result?.snapshot) {
+        console.log("RESULT COMPLET", match.id, result);
         console.log(
           "WRITE MATCH SNAPSHOT",
           match.id,
@@ -433,4 +447,92 @@ export async function rebuildAllStats() {
 
   console.log("✅ Recalcul terminé");
   return true;
+}
+
+// =========================
+// 🔄 RENOMMER UN JOUEUR (ADMIN)
+// =========================
+
+/**
+ * Renomme un joueur et met à jour tous les matchs associés.
+ * Appelle rebuildAllStats() pour recalculer les ELO/stats/snapshots.
+ *
+ * @param {string} playerId - L'ID du joueur à renommer
+ * @param {string} oldName - L'ancien nom (utilisé pour chercher dans les matchs)
+ * @param {string} newName - Le nouveau nom (non normalisé)
+ * @returns {{ success: boolean, message: string }}
+ */
+export async function renamePlayer(playerId, oldName, newName) {
+  const normalizedNewName = normalizePlayerName(newName);
+
+  // === Validations ===
+  if (!playerId || !oldName || !normalizedNewName) {
+    return {
+      success: false,
+      message: "❌ Données invalides pour le renommage",
+    };
+  }
+
+  if (normalizedNewName === oldName) {
+    return {
+      success: false,
+      message: "⚠️ Le nouveau nom est identique à l'ancien",
+    };
+  }
+
+  // Vérifier que le nouveau nom n'existe pas déjà
+  const allPlayers = await getAllPlayers();
+  if (nameExistsInList(normalizedNewName, allPlayers)) {
+    return {
+      success: false,
+      message: "❌ Ce nom existe déjà dans la base",
+    };
+  }
+
+  try {
+    // === Mettre à jour le joueur ===
+    await updatePlayer(playerId, { name: normalizedNewName });
+
+    // === Mettre à jour tous les matchs ===
+    const allMatches = await getAllMatches();
+    const matchesToUpdate = allMatches.filter(
+      (match) =>
+        match.b1 === oldName ||
+        match.b2 === oldName ||
+        match.r1 === oldName ||
+        match.r2 === oldName,
+    );
+
+    console.log(`🔄 Renommage: ${oldName} → ${normalizedNewName}`);
+    console.log(`📊 ${matchesToUpdate.length} matchs à mettre à jour`);
+
+    for (const match of matchesToUpdate) {
+      const updates = {};
+      if (match.b1 === oldName) updates.b1 = normalizedNewName;
+      if (match.b2 === oldName) updates.b2 = normalizedNewName;
+      if (match.r1 === oldName) updates.r1 = normalizedNewName;
+      if (match.r2 === oldName) updates.r2 = normalizedNewName;
+
+      if (Object.keys(updates).length > 0) {
+        await updateMatch(match.id, updates);
+      }
+    }
+
+    // === Recalculer tous les ELO/stats ===
+    if (matchesToUpdate.length > 0) {
+      console.log("🔧 Reconstruction des statistiques...");
+      await rebuildAllStats();
+    }
+
+    return {
+      success: true,
+      message: `✅ Joueur renommé : ${oldName} → ${normalizedNewName}`,
+    };
+  } catch (error) {
+    console.error("❌ Erreur lors du renommage :", error);
+    return {
+      success: false,
+      message: `❌ Erreur : ${error.message}`,
+    };
+  }
 }

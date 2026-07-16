@@ -53,6 +53,7 @@ import {
   openPlayerProfile,
   closePlayerProfile,
 } from "./ui/pages/player-profile.page.js";
+import { openRandomTeams } from "./ui/pages/random-teams.page.js";
 
 // --- Debug ---
 import "./ui/debug/audit.js";
@@ -96,6 +97,7 @@ window.closeModal = closeModal;
 window.loginAdmin = loginAdmin;
 window.logoutAdmin = logoutAdmin;
 window.loadPlayerEloTrend = loadPlayerEloTrend;
+window.openRandomTeams = openRandomTeams;
 
 // Wrappers pour les appels onclick du HTML
 window.openPlayersModal = function () {

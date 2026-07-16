@@ -36,8 +36,8 @@
     </div>
 
     <!-- =========================
-💬 Modals
-========================= -->
+     💬 Modals
+     ========================= -->
     <div class="beta-box">
       ⚠️ News : Archive !<br>
     </div>
@@ -97,6 +97,11 @@
     <lottie-player src="lottie/rules.json" loop autoplay></lottie-player>
     <span>Règles</span>
   </button>
+
+  <button class="carte big" onclick="openRandomTeams()">
+  <lottie-player   src="lottie/aléatoire.json"  loop autoplay> </lottie-player>
+  <span>Équipes</span>
+</button>
 
   <button class="carte big admin" onclick="loginAdmin()">
     <lottie-player src="lottie/loginAdmin.json" loop autoplay></lottie-player>
@@ -817,14 +822,82 @@ CREATE TOURNAMENT
       <ul id="commentList"></ul>
 
     </div>
-  </div>
-
+  </div> 
 
   </div>
 
   <footer>
     © 2026 - J'peux pas j'ai baby-foot - Guillaume PEREZ
   </footer>
+
+  <!-- =========================
+   🎲 ÉQUIPES ALÉATOIRES
+   ========================= -->
+  <div id="randomTeams" class="modal">
+    <div class="box">
+
+      <h3 class="title">🎲 Équipes aléatoires</h3>
+
+      <!-- ÉQUIPE BLEUE -->
+      <div style="background:#dbeafe; border:3px solid #3b82f6; padding:20px; border-radius:8px; margin-bottom:20px;">
+        <h4 style="margin-top:0; color:#1e40af;">🔵 Équipe Bleue</h4>
+        <div id="randomTeamBlue" style="font-size:52px; font-weight:bold; color:#1e40af; text-align:center; padding:20px;"></div>
+      </div>
+
+      <!-- ÉQUIPE ROUGE -->
+      <div style="background:#fee2e2; border:3px solid #ef4444; padding:20px; border-radius:8px; margin-bottom:20px;">
+        <h4 style="margin-top:0; color:#b91c1c;">🔴 Équipe Rouge</h4>
+        <div id="randomTeamRed" style="font-size:52px; font-weight:bold; color:#ef4444; text-align:center; padding:20px;"></div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="actions">
+
+        <button onclick="recalculateTeams()" class="btn-danger">
+          🔀 Recalculer
+        </button>
+
+        <button onclick="closeModal('randomTeams')" class="btn-danger">
+          <img src="img/closed.png" alt="">
+          Fermer
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================
+   ✏️ RENOMMER UN JOUEUR (ADMIN)
+   ========================= -->
+  <div id="renamePlayerModal" class="modal">
+    <div class="box">
+
+      <h3 class="title">✏️ Renommer un joueur</h3>
+
+      <input
+        id="renamePlayerInput"
+        type="text"
+        placeholder="Nouveau nom"
+        style="width:100%; padding:8px; margin-bottom:16px; border:1px solid #ddd; border-radius:4px; font-size:16px;"
+      >
+
+      <div class="actions">
+
+        <button onclick="confirmRename()" class="btn-add">
+          <img src="img/addPlayer.png" alt="">
+          Confirmer
+        </button>
+
+        <button onclick="closeModal('renamePlayerModal')" class="btn-danger">
+          <img src="img/closed.png" alt="">
+          Annuler
+        </button>
+
+      </div>
+
+    </div>
+  </div>
 
   <script type="module" src="js/src/main.js"></script>
 

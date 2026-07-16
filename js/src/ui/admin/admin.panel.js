@@ -14,9 +14,13 @@ import { updatePlayer } from "../../repositories/players.repository.js";
 
 import { Toast } from "../components/toast.js";
 import { confirmAction } from "../components/confirm.js";
+import { openModal, closeModal } from "../components/modal.js";
 import { loadRanking } from "../pages/ranking.page.js";
 import { loadMatches } from "../pages/matches.page.js";
-import { rebuildAllStats } from "../../services/player.service.js";
+import {
+  rebuildAllStats,
+  renamePlayer,
+} from "../../services/player.service.js";
 
 // =========================
 // 🗑️ RESET MATCHS
@@ -119,8 +123,55 @@ export async function handleTogglePlayer(id, isActive) {
 window.togglePlayer = handleTogglePlayer;
 
 // =========================
-// 🧑 LISTE ADMIN DES JOUEURS
+// ✏️ RENOMMER UN JOUEUR
 // =========================
+
+let _playerToRename = null; // Stocke le joueur sélectionné pour renommage
+
+export async function handleOpenRenameModal(id, name) {
+  _playerToRename = { id, name };
+  const input = document.getElementById("renamePlayerInput");
+  if (input) {
+    input.value = name;
+    input.focus();
+    input.select();
+  }
+  openModal("renamePlayerModal");
+}
+
+window.openRenameModal = handleOpenRenameModal;
+
+export async function handleConfirmRename() {
+  if (!_playerToRename) return;
+
+  const input = document.getElementById("renamePlayerInput");
+  const newName = input?.value?.trim();
+
+  if (!newName) {
+    Toast.error("❌ Nom vide");
+    return;
+  }
+
+  const result = await renamePlayer(
+    _playerToRename.id,
+    _playerToRename.name,
+    newName,
+  );
+
+  if (result.success) {
+    Toast.success(result.message);
+    closeModal("renamePlayerModal");
+    await loadAdminPlayers();
+    await loadRanking();
+    await loadMatches();
+  } else {
+    Toast.error(result.message);
+  }
+
+  _playerToRename = null;
+}
+
+window.confirmRename = handleConfirmRename;
 
 export async function loadAdminPlayers() {
   const container = document.getElementById("adminPlayersList");
@@ -146,9 +197,14 @@ export async function loadAdminPlayers() {
 
     div.innerHTML = `
       <span style="font-weight:bold;">${p.name} ${isActive ? "" : "(désactivé)"}</span>
-      <button onclick="togglePlayer('${p.id}', ${isActive})">
-        ${isActive ? "🚫 Désactiver" : "♻️ Réactiver"}
-      </button>
+      <div style="display:flex; gap:8px;">
+        <button onclick="openRenameModal('${p.id}', '${p.name}')">
+          ✏️ Renommer
+        </button>
+        <button onclick="togglePlayer('${p.id}', ${isActive})">
+          ${isActive ? "🚫 Désactiver" : "♻️ Réactiver"}
+        </button>
+      </div>
     `;
 
     container.appendChild(div);
