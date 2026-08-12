@@ -38,7 +38,10 @@ import {
   openTournamentTab,
 } from "./ui/pages/tournament.page.js";
 import { loadComments, handleAddComment } from "./ui/pages/comments.page.js";
-import { validatePlayer } from "./ui/pages/score-form.page.js";
+import {
+  validatePlayer,
+  initScoreFormListeners,
+} from "./ui/pages/score-form.page.js";
 
 // --- Admin ---
 import {
@@ -204,4 +207,5 @@ document.addEventListener("DOMContentLoaded", () => {
   loadPlayersFilter();
   loadPlayersTrendFilter();
   loadTournaments();
+  initScoreFormListeners();
 });

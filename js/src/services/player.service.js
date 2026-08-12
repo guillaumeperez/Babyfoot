@@ -19,6 +19,7 @@ import {
 import { updatePlayer } from "../repositories/players.repository.js";
 
 import { updateElo2v2, buildEloSnapshot } from "./elo.service.js";
+import { calculateOffenseDefense } from "./offense-defense.service.js";
 
 import { APP_CONFIG } from "../config/app.config.js";
 import {
@@ -115,6 +116,8 @@ function buildPlayersStateFromSnapshot(players, match) {
       elo: p.elo ?? APP_CONFIG.DEFAULT_ELO,
       wins: p.wins ?? 0,
       losses: p.losses ?? 0,
+      offense: Number(p.offense) || 0,
+      defense: Number(p.defense) || 0,
       history: Array.isArray(p.history)
         ? p.history.filter((h) => typeof h === "string")
         : [],
@@ -141,6 +144,8 @@ function buildInitialMemoryPlayersState(players) {
       elo: APP_CONFIG.DEFAULT_ELO,
       wins: 0,
       losses: 0,
+      offense: 0,
+      defense: 0,
       history: [],
     };
 
@@ -237,10 +242,15 @@ function calculateMatchResultForState(match, playersState) {
       j.oldElo = APP_CONFIG.DEFAULT_ELO;
     }
 
+    j.offense = Number(j.offense) || 0;
+    j.defense = Number(j.defense) || 0;
+
     if (!Array.isArray(j.history)) {
       j.history = [];
     }
   });
+
+  const matchStats = calculateOffenseDefense(match.sb, match.sr);
 
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
 
@@ -269,6 +279,15 @@ function calculateMatchResultForState(match, playersState) {
       j.history.shift();
     }
 
+    const isBluePlayer = [match.b1, match.b2].includes(j.name);
+    if (isBluePlayer) {
+      j.offense += matchStats.blueOffense;
+      j.defense += matchStats.blueDefense;
+    } else {
+      j.offense += matchStats.redOffense;
+      j.defense += matchStats.redDefense;
+    }
+
     j.wins = wins;
     j.losses = losses;
 
@@ -291,6 +310,7 @@ function calculateMatchResultForState(match, playersState) {
   return {
     snapshot,
     debug: simulationResult,
+    matchStats,
   };
 }
 
@@ -347,6 +367,8 @@ export async function applyMatchResultToPlayers(match) {
         elo: Number(safeElo) || APP_CONFIG.DEFAULT_ELO,
         lastDiff: Number(safeElo - safeOldElo) || 0,
         history: safeHistory,
+        offense: Number(j.offense) || 0,
+        defense: Number(j.defense) || 0,
       };
 
       try {
@@ -360,6 +382,7 @@ export async function applyMatchResultToPlayers(match) {
   return {
     ...result.snapshot,
     debug: result.debug,
+    matchStats: result.matchStats,
   };
 }
 // =========================
@@ -394,6 +417,8 @@ export async function rebuildAllStats() {
       if (match.type === "tournament") continue;
 
       const result = calculateMatchResultForState(match, playersState);
+      const matchStats =
+        result?.matchStats || calculateOffenseDefense(match.sb, match.sr);
 
       if (!isTestMode() && match.id && result?.snapshot) {
         console.log("RESULT COMPLET", match.id, result);
@@ -410,6 +435,7 @@ export async function rebuildAllStats() {
           eloAfter: result.snapshot.eloAfter ?? {},
           eloChange: result.snapshot.eloChange ?? {},
           played: true,
+          ...matchStats,
         });
       }
     } catch (err) {
@@ -439,6 +465,8 @@ export async function rebuildAllStats() {
         elo: Number(safeElo) || APP_CONFIG.DEFAULT_ELO,
         wins: Number(playerState.wins) || 0,
         losses: Number(playerState.losses) || 0,
+        offense: Number(playerState.offense) || 0,
+        defense: Number(playerState.defense) || 0,
         lastDiff: Number(safeElo - safeOldElo) || 0,
         history: safeHistory,
       });

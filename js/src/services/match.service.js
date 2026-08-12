@@ -12,7 +12,10 @@ import {
   deleteMatch as deleteMatchDoc,
 } from "../repositories/matches.repository.js";
 
-import { getAllPlayers, updatePlayer } from "../repositories/players.repository.js";
+import {
+  getAllPlayers,
+  updatePlayer,
+} from "../repositories/players.repository.js";
 import { applyMatchResultToPlayers } from "./player.service.js";
 import { APP_CONFIG } from "../config/app.config.js";
 
@@ -28,7 +31,15 @@ import { isTestMode } from "../core/state.js";
  * Valide les données d'un match classique avant sauvegarde.
  * Renvoie { valid, error } — error est un message prêt à afficher.
  */
-export function validateClassicMatch({ b1, b2, r1, r2, sb, sr, lastMatchSave }) {
+export function validateClassicMatch({
+  b1,
+  b2,
+  r1,
+  r2,
+  sb,
+  sr,
+  lastMatchSave,
+}) {
   const scoreCheck = validateClassicScore(sb, sr);
   if (!scoreCheck.valid) return scoreCheck;
 
@@ -72,6 +83,7 @@ export async function saveClassicMatch(matchData) {
   await updateMatch(matchRef.id, {
     ...safeResult,
     played: true,
+    ...(result?.matchStats || {}),
   });
 
   return { testMode: false, result, matchId: matchRef.id };
@@ -93,10 +105,26 @@ export async function deleteClassicMatchAndRestoreElo(matchId) {
 
   if (match.eloBefore) {
     const players = [
-      { name: match.b1, elo: match.eloBefore.b1, diff: match.eloChange?.b1 || 0 },
-      { name: match.b2, elo: match.eloBefore.b2, diff: match.eloChange?.b2 || 0 },
-      { name: match.r1, elo: match.eloBefore.r1, diff: match.eloChange?.r1 || 0 },
-      { name: match.r2, elo: match.eloBefore.r2, diff: match.eloChange?.r2 || 0 },
+      {
+        name: match.b1,
+        elo: match.eloBefore.b1,
+        diff: match.eloChange?.b1 || 0,
+      },
+      {
+        name: match.b2,
+        elo: match.eloBefore.b2,
+        diff: match.eloChange?.b2 || 0,
+      },
+      {
+        name: match.r1,
+        elo: match.eloBefore.r1,
+        diff: match.eloChange?.r1 || 0,
+      },
+      {
+        name: match.r2,
+        elo: match.eloBefore.r2,
+        diff: match.eloChange?.r2 || 0,
+      },
     ];
 
     const allPlayers = await getAllPlayers();

@@ -50,9 +50,11 @@ function renderRankingTable(players, tbodyEl) {
     tr.innerHTML = `
       <td>${i + 1}</td>
       <td>${p.name}</td>
-      <td>${p.wins}</td>
+        <td>${p.wins}</td>
       <td>${p.losses}</td>
       <td><b>${p.elo}</b></td>
+      <td>${p.offense || 0}</td>
+      <td>${p.defense || 0}</td>
       <td style="color:${color}; font-weight:bold;">${diffText}</td>
       <td>${form}</td>
     `;
@@ -94,7 +96,7 @@ export async function loadRanking() {
     });
 
     if (players.length === 0) {
-      tbody.innerHTML = "<tr><td colspan='7'>Aucun joueur</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='9'>Aucun joueur</td></tr>";
       return;
     }
 

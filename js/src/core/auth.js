@@ -53,13 +53,16 @@ export async function logoutAdmin() {
 // Appelé une seule fois au démarrage depuis main.js.
 // Notifie les callbacks fournis à chaque changement d'état de connexion.
 
-export function watchAuthState({ onLogin, onLogout }) {
+export function watchAuthState({ onLogin, onLogout } = {}) {
   onAuthStateChanged(auth, (user) => {
-    const isAdminUser =
-      user != null && user.email === APP_CONFIG.ADMIN_EMAIL;
+    const isAdminUser = user != null && user.email === APP_CONFIG.ADMIN_EMAIL;
 
     setCurrentUser(user);
     setIsAdmin(isAdminUser);
+
+    if (user) {
+      // No generic onAnyLogin callback anymore.
+    }
 
     if (isAdminUser) {
       onLogin?.();

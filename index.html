@@ -8,6 +8,7 @@
   <title>Baby-foot AGAP</title>
 
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/offense-defense.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -463,6 +464,8 @@ CREATE TOURNAMENT
         <input id="sr" type="number">
       </div>
 
+      <div id="scoreStatsPreview" style="margin-top:16px;"></div>
+
       <div class="actions">
 
         <button onclick="saveMatch(event)" class="btn-add">
@@ -500,6 +503,8 @@ CREATE TOURNAMENT
             <th>V</th>
             <th>D</th>
             <th>ELO</th>
+            <th>O</th>
+            <th>Df</th>
             <th>+/-</th>
             <th>Match</th>
           </tr>
@@ -678,23 +683,12 @@ CREATE TOURNAMENT
 ========================= -->
 <div id="archiveModal" class="modal" style="display:none;">
   <div class="modal-content" style="
-  max-width:800px;
-  margin:auto;
-  padding:20px;
-  background:white;
-  border-radius:12px;
-  color:black;">
-
-  <table style="
-  width:100%;
-  margin-top:10px;
-  color:black;">
-
-  <table style="
-  width:100%;
-  border-collapse:collapse;
-  color:black;
-">
+    max-width:800px;
+    margin:auto;
+    padding:20px;
+    background:white;
+    border-radius:12px;
+    color:black;">
 
     <h2>📦 Archives du classement</h2>
 
@@ -733,21 +727,11 @@ CREATE TOURNAMENT
           <th>Δ ELO</th>
         </tr>
       </thead>
+
       <tbody id="evolutionTable"></tbody>
     </table>
 
     <hr style="margin:20px 0;">
-
-    <h3>📈 Graphique de saison</h3>
-
-<canvas
-  id="seasonChart"
-  style="
-    margin-top:15px;
-    max-height:400px;
-    width:100%;
-  ">
-</canvas>
 
     <!-- =========================
     📦 ARCHIVE SIMPLE
@@ -764,18 +748,21 @@ CREATE TOURNAMENT
       <option value="">-- Choisir une archive --</option>
     </select>
 
-    <table style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th>Rang</th>
-          <th>Joueur</th>
-          <th>V</th>
-          <th>D</th>
-          <th>ELO</th>
-        </tr>
-      </thead>
-      <tbody id="archiveTable"></tbody>
-    </table>
+    <table class="archive-ranking-table">
+  <thead>
+    <tr>
+      <th>Rang</th>
+      <th>Joueur</th>
+      <th>V</th>
+      <th>D</th>
+      <th>O</th>
+      <th>Df</th>
+      <th>ELO</th>
+    </tr>
+  </thead>
+
+  <tbody id="archiveTable"></tbody>
+</table>
 
     <button onclick="closeArchiveModal()" style="
       margin-top:15px;
@@ -793,7 +780,6 @@ CREATE TOURNAMENT
 
   </div>
 </div>
-
 
  <!-- =========================
 �💬 COMMENTAIRES

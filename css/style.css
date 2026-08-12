@@ -1254,10 +1254,6 @@ Tournoi
   flex-direction: column;
 }
 
-#archiveChart {
-  height: 280px;
-}
-
 #archiveTable {
   max-height: 250px;
   overflow-y: auto;
@@ -1296,4 +1292,81 @@ Tournoi
 
 .btn-danger:hover {
   color: #fff !important;
+}
+
+/* =========================================
+   📦 ARCHIVE - CORRECTION TABLEAU
+   ========================================= */
+
+.archive-ranking-table {
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: fixed !important;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* IMPORTANT :
+   on remet le comportement normal d'un tableau */
+.archive-ranking-table thead {
+  display: table-header-group !important;
+  width: 100% !important;
+}
+
+.archive-ranking-table tbody {
+  display: table-row-group !important;
+  width: 100% !important;
+}
+
+.archive-ranking-table tr {
+  display: table-row !important;
+  width: 100% !important;
+}
+
+.archive-ranking-table th,
+.archive-ranking-table td {
+  display: table-cell !important;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  vertical-align: middle;
+  border-bottom: 1px solid #d1d5db;
+}
+
+/* Largeur des colonnes */
+
+.archive-ranking-table th:nth-child(1),
+.archive-ranking-table td:nth-child(1) {
+  width: 12%;
+  text-align: center;
+}
+
+.archive-ranking-table th:nth-child(2),
+.archive-ranking-table td:nth-child(2) {
+  width: 38%;
+  text-align: left;
+}
+
+.archive-ranking-table th:nth-child(3),
+.archive-ranking-table td:nth-child(3) {
+  width: 16%;
+  text-align: center;
+}
+
+.archive-ranking-table th:nth-child(4),
+.archive-ranking-table td:nth-child(4) {
+  width: 16%;
+  text-align: center;
+}
+
+.archive-ranking-table th:nth-child(5),
+.archive-ranking-table td:nth-child(5) {
+  width: 18%;
+  text-align: center;
+}
+
+/* Évite qu'un nom trop long déforme le tableau */
+.archive-ranking-table td:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

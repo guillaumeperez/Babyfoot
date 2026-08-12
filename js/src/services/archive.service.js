@@ -5,13 +5,24 @@
 // backup/restauration ELO, comparaison entre deux archives.
 // Ne touche jamais le DOM directement.
 
-import { getAllPlayers, updatePlayer, resetPlayerElo } from "../repositories/players.repository.js";
+import {
+  getAllPlayers,
+  updatePlayer,
+  resetPlayerElo,
+} from "../repositories/players.repository.js";
 import { deleteAllMatches } from "../repositories/matches.repository.js";
-import { createArchive, getArchiveById } from "../repositories/archives.repository.js";
+import {
+  createArchive,
+  getArchiveById,
+} from "../repositories/archives.repository.js";
 
 import { APP_CONFIG } from "../config/app.config.js";
 import { buildDateKey, buildSeasonName } from "../utils/date.utils.js";
-import { setEloBackup, getEloBackupFor, clearEloBackup } from "../core/state.js";
+import {
+  setEloBackup,
+  getEloBackupFor,
+  clearEloBackup,
+} from "../core/state.js";
 
 // =========================
 // 📸 SNAPSHOT DE CLASSEMENT
@@ -27,6 +38,8 @@ export function buildRankingSnapshot(players) {
     wins: p.wins || 0,
     losses: p.losses || 0,
     elo: p.elo || APP_CONFIG.DEFAULT_ELO,
+    offense: Number(p.offense) || 0,
+    defense: Number(p.defense) || 0,
   }));
 
   ranking.sort((a, b) => b.elo - a.elo);
@@ -98,7 +111,10 @@ export async function restorePlayerEloFromBackup(playerName) {
   const backup = getEloBackupFor(playerName);
 
   if (!backup) {
-    return { success: false, error: `❌ Aucun backup trouvé pour ${playerName}` };
+    return {
+      success: false,
+      error: `❌ Aucun backup trouvé pour ${playerName}`,
+    };
   }
 
   const players = await getAllPlayers();

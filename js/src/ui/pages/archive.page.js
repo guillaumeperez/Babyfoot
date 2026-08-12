@@ -3,11 +3,15 @@
 // =========================
 // Liste des archives, affichage d'une archive, comparaison entre deux archives.
 
-import { getAllArchives, getArchiveById } from "../../repositories/archives.repository.js";
-import { buildArchiveOptions, compareArchives as compareArchivesService } from "../../services/archive.service.js";
+import {
+  getAllArchives,
+  getArchiveById,
+} from "../../repositories/archives.repository.js";
 
-let archiveChart = null;
-let seasonChart = null;
+import {
+  buildArchiveOptions,
+  compareArchives as compareArchivesService,
+} from "../../services/archive.service.js";
 
 // =========================
 // 🪟 OUVERTURE / FERMETURE MODAL
@@ -38,51 +42,6 @@ window.openArchiveModal = openArchiveModal;
 window.closeArchiveModal = closeArchiveModal;
 
 // =========================
-// 📈 GRAPHIQUE D'UNE ARCHIVE
-// =========================
-
-function renderArchiveChart(ranking) {
-  const canvas = document.getElementById("archiveChart");
-  if (!canvas) return;
-
-  const ctx = canvas.getContext("2d");
-
-  const labels = ranking.map((p) => p.name);
-  const data = ranking.map((p) => p.elo || 0);
-
-  if (archiveChart) archiveChart.destroy();
-
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const padding = 30;
-
-  archiveChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{ label: "ELO", data, backgroundColor: "#3b82f6" }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: { padding: { bottom: 40 } },
-      plugins: { legend: { display: false } },
-      scales: {
-        x: {
-          ticks: {
-            autoSkip: false,
-            maxRotation: 90,
-            minRotation: 90,
-            font: { size: 10 },
-          },
-        },
-        y: { min: min - padding, max: max + padding },
-      },
-    },
-  });
-}
-
-// =========================
 // 📂 LISTE DES ARCHIVES
 // =========================
 
@@ -107,8 +66,10 @@ export async function loadArchiveList() {
       if (!select) return;
 
       const option = document.createElement("option");
+
       option.value = archive.id;
       option.textContent = `📅 ${archive.date}`;
+
       select.appendChild(option);
     });
   });
@@ -123,11 +84,6 @@ export async function loadArchiveList() {
       if (!this.value) {
         if (container) container.innerHTML = "";
         if (title) title.innerText = "";
-
-        if (archiveChart) {
-          archiveChart.destroy();
-          archiveChart = null;
-        }
 
         return;
       }
@@ -154,20 +110,25 @@ export async function loadArchive(archiveId) {
 
   ranking.forEach((p) => {
     const tr = document.createElement("tr");
+
     tr.innerHTML = `
       <td>${p.rank}</td>
       <td>${p.name}</td>
       <td>${p.wins}</td>
       <td>${p.losses}</td>
+      <td>${p.offense || 0}</td>
+      <td>${p.defense || 0}</td>
       <td><b>${p.elo}</b></td>
     `;
+
     tbody.appendChild(tr);
   });
 
   const title = document.getElementById("archiveTitle");
-  if (title) title.innerText = archive.seasonName || "Archive";
 
-  renderArchiveChart(ranking);
+  if (title) {
+    title.innerText = archive.seasonName || "Archive";
+  }
 }
 
 // =========================
@@ -182,10 +143,12 @@ function renderEvolutionTable(data) {
 
   data.forEach((p) => {
     let color = "black";
+
     if (p.diff > 0) color = "green";
     if (p.diff < 0) color = "red";
 
     const tr = document.createElement("tr");
+
     tr.innerHTML = `
       <td>${p.name}</td>
       <td>${p.before}</td>
@@ -194,23 +157,8 @@ function renderEvolutionTable(data) {
         ${p.diff > 0 ? "+" : ""}${p.diff}
       </td>
     `;
+
     tbody.appendChild(tr);
-  });
-}
-
-function renderSeasonChart(data) {
-  const ctx = document.getElementById("seasonChart");
-  if (!ctx) return;
-
-  if (seasonChart) seasonChart.destroy();
-
-  seasonChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: data.map((p) => p.name),
-      datasets: [{ label: "ELO fin de saison", data: data.map((p) => p.after) }],
-    },
-    options: { responsive: true },
   });
 }
 
@@ -221,10 +169,10 @@ export async function runArchiveComparison() {
   if (!a || !b) return;
 
   const evolution = await compareArchivesService(a, b);
+
   if (!evolution) return;
 
   renderEvolutionTable(evolution);
-  renderSeasonChart(evolution);
 }
 
 window.runArchiveComparison = runArchiveComparison;
