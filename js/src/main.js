@@ -42,6 +42,7 @@ import {
   validatePlayer,
   initScoreFormListeners,
 } from "./ui/pages/score-form.page.js";
+import { initAccordions } from "./ui/components/accordion.js";
 
 // --- Admin ---
 import {
@@ -208,4 +209,5 @@ document.addEventListener("DOMContentLoaded", () => {
   loadPlayersTrendFilter();
   loadTournaments();
   initScoreFormListeners();
+  initAccordions();
 });
