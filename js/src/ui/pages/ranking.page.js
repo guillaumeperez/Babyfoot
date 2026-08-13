@@ -5,6 +5,11 @@
 // depuis le repository, ne fait que les afficher.
 
 import { getActivePlayers } from "../../repositories/players.repository.js";
+import {
+  calculateOffense,
+  calculateDefense,
+  formatStatsNumber,
+} from "../../services/player-stats.service.js";
 
 let isRankingLoading = false;
 let lastRankingCall = 0;
@@ -45,19 +50,26 @@ function renderRankingTable(players, tbodyEl) {
 
     const form = (p.history || []).join("");
 
+    const statsMatches = Number(p.statsMatches) || 0;
+    const offense = formatStatsNumber(
+      calculateOffense(Number(p.offense) || 0, statsMatches),
+    );
+    const defense = formatStatsNumber(
+      calculateDefense(Number(p.defense) || 0, statsMatches),
+    );
+
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${p.name}</td>
-        <td>${p.wins}</td>
-      <td>${p.losses}</td>
-      <td><b>${p.elo}</b></td>
-      <td>${p.offense || 0}</td>
-      <td>${p.defense || 0}</td>
-      <td style="color:${color}; font-weight:bold;">${diffText}</td>
-      <td>${form}</td>
-    `;
+  <td>${i + 1}</td>
+  <td>${p.name}</td>
+  <td>${p.wins}</td>
+  <td>${p.losses}</td>
+  <td><b>${p.elo}</b></td>
+  <td style="color:${color}; font-weight:bold;">${diffText}</td>
+  <td>${offense}</td>
+  <td>${defense}</td>
+  <td>${form}</td>`;
 
     tbodyEl.appendChild(tr);
   });

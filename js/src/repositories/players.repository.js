@@ -56,6 +56,7 @@ export async function createPlayer(name) {
     losses: 0,
     offense: 0,
     defense: 0,
+    statsMatches: 0,
     active: true,
     history: [],
     createdAt: new Date(),
@@ -87,6 +88,7 @@ export async function resetPlayerElo(id) {
     losses: 0,
     offense: 0,
     defense: 0,
+    statsMatches: 0,
     lastDiff: 0,
     history: [],
   });

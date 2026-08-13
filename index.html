@@ -40,7 +40,8 @@
      💬 Modals
      ========================= -->
     <div class="beta-box">
-      ⚠️ News : Point offensif et défensif !<br>
+      ⚠️ News : Point offensif et défensif ! <br>
+      O = buts marqués/match · 🛡️ D = buts encaissés/match<br>
     </div>
 
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -80,9 +81,9 @@
     <span>Joueurs</span>
   </button>
 
-  <button class="carte big comment" onclick="openModal('comment')">
+  <button class="carte big pearls" onclick="openModal('pearls')">
     <lottie-player src="lottie/comment.json" loop autoplay></lottie-player>
-    <span>Commentaire</span>
+    <span> Les Perles</span>
   </button>
 
 
@@ -503,10 +504,10 @@ CREATE TOURNAMENT
             <th>V</th>
             <th>D</th>
             <th>ELO</th>
-            <th>O</th>
-            <th>Df</th>
             <th>+/-</th>
-            <th>Match</th>
+            <th>Off</th>
+            <th>Déf</th>
+            <th>Forme</th>
           </tr>
         </thead>
         <tbody id="rankingList"></tbody>
@@ -784,31 +785,30 @@ CREATE TOURNAMENT
  <!-- =========================
 �💬 COMMENTAIRES
 ========================= -->
-  <div id="comment" class="modal">
+  <div id="pearls" class="modal">
     <div class="box">
 
-      <h3>💬 Commentaires</h3>
-
-      <textarea id="commentInput"></textarea>
+      <h3> Les Perles du Baby</h3>
 
       <div class="actions">
 
-        <button onclick="addComment()" class="btn-add">
+        <button onclick="showRandomPearl()" class="btn-add">
           <img src="img/addPlayer.png" alt="">
-          Ajouter
+          Afficher une perle
         </button>
 
-        <button onclick="closeModal('comment')" class="btn-danger">
+        <button onclick="closeModal('pearls')" class="btn-danger">
           <img src="img/closed.png" alt="">
           Fermer
         </button>
 
       </div>
 
-      <ul id="commentList"></ul>
+      <div id="pearlsContainer"></div>
 
     </div>
-  </div> 
+  </div>
+
 
   </div>
 

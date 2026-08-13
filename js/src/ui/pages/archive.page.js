@@ -13,6 +13,12 @@ import {
   compareArchives as compareArchivesService,
 } from "../../services/archive.service.js";
 
+import {
+  calculateOffense,
+  calculateDefense,
+  formatStatsNumber,
+} from "../../services/player-stats.service.js";
+
 // =========================
 // 🪟 OUVERTURE / FERMETURE MODAL
 // =========================
@@ -109,6 +115,14 @@ export async function loadArchive(archiveId) {
   const ranking = archive.ranking || [];
 
   ranking.forEach((p) => {
+    const statsMatches = Number(p.statsMatches) || 0;
+    const offense = formatStatsNumber(
+      calculateOffense(Number(p.offense) || 0, statsMatches),
+    );
+    const defense = formatStatsNumber(
+      calculateDefense(Number(p.defense) || 0, statsMatches),
+    );
+
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
@@ -116,8 +130,8 @@ export async function loadArchive(archiveId) {
       <td>${p.name}</td>
       <td>${p.wins}</td>
       <td>${p.losses}</td>
-      <td>${p.offense || 0}</td>
-      <td>${p.defense || 0}</td>
+      <td>${offense}</td>
+      <td>${defense}</td>
       <td><b>${p.elo}</b></td>
     `;
 

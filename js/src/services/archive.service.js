@@ -40,6 +40,7 @@ export function buildRankingSnapshot(players) {
     elo: p.elo || APP_CONFIG.DEFAULT_ELO,
     offense: Number(p.offense) || 0,
     defense: Number(p.defense) || 0,
+    statsMatches: Number(p.statsMatches) || 0,
   }));
 
   ranking.sort((a, b) => b.elo - a.elo);

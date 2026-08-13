@@ -37,7 +37,7 @@ import {
   updateTeamModeUI,
   openTournamentTab,
 } from "./ui/pages/tournament.page.js";
-import { loadComments, handleAddComment } from "./ui/pages/comments.page.js";
+import { loadPearls, handleShowRandomPearl } from "./ui/pages/pearls.page.js";
 import {
   validatePlayer,
   initScoreFormListeners,
@@ -132,12 +132,12 @@ window.loadPlayersSelect = loadPlayersSelect;
 window.loadPlayersFilter = loadPlayersFilter;
 window.loadPlayersTrendFilter = loadPlayersTrendFilter;
 window.loadTournaments = loadTournaments;
-window.loadComments = loadComments;
+window.loadPearls = loadPearls;
 
 // Fonctions appelées depuis onclick du HTML
 window.addPlayer = handleAddPlayer;
 window.saveMatch = handleSaveMatch;
-window.addComment = handleAddComment;
+window.showRandomPearl = handleShowRandomPearl;
 window.createTournament = createTournament;
 window.addManualTeam = addManualTeam;
 window.updateTeamModeUI = updateTeamModeUI;
@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Expose quelques fonctions utiles pour debug manuel en console
   window.loadRanking = loadRanking;
   window.loadMatches = loadMatches;
-  window.loadComments = loadComments;
+  window.loadPearls = loadPearls;
   window.loadPlayersSelect = loadPlayersSelect;
   window.loadPlayersFilter = loadPlayersFilter;
   window.loadPlayersTrendFilter = loadPlayersTrendFilter;
@@ -203,7 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadRanking();
   loadMatches();
-  loadComments();
+  loadPearls();
   loadPlayersSelect();
   loadPlayersFilter();
   loadPlayersTrendFilter();

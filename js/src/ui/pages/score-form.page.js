@@ -7,7 +7,7 @@
 
 import { validatePlayerNameChars } from "../../utils/validation.utils.js";
 import { Toast } from "../components/toast.js";
-import { calculateOffenseDefense } from "../../services/offense-defense.service.js";
+import { calculateMatchStats } from "../../services/player-stats.service.js";
 
 // =========================
 // 👥 VALIDATION JOUEUR (live, sur input)
@@ -66,20 +66,20 @@ function updateScoreStatsPreview() {
     return;
   }
 
-  const stats = calculateOffenseDefense(sb, sr);
+  const stats = calculateMatchStats(sb, sr);
 
   preview.innerHTML = `
     <div class="score-preview-box">
       <div class="score-preview-title">📊 Statistiques du match</div>
       <div class="score-preview-team team-blue">
         <div>🔵 Équipe Bleue</div>
-        <div>⚡ Offensive : +${stats.blueOffense}</div>
-        <div>🛡️ Défensive : +${stats.blueDefense}</div>
+        <div>⚡ Offensive : ${stats.blueGoalsFor} buts</div>
+        <div>🛡️ Défensive : ${stats.blueGoalsAgainst} encaissés</div>
       </div>
       <div class="score-preview-team team-red">
         <div>🔴 Équipe Rouge</div>
-        <div>⚡ Offensive : +${stats.redOffense}</div>
-        <div>🛡️ Défensive : +${stats.redDefense}</div>
+        <div>⚡ Offensive : ${stats.redGoalsFor} buts</div>
+        <div>🛡️ Défensive : ${stats.redGoalsAgainst} encaissés</div>
       </div>
     </div>
   `;

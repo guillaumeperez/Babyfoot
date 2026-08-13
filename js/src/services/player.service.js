@@ -19,7 +19,7 @@ import {
 import { updatePlayer } from "../repositories/players.repository.js";
 
 import { updateElo2v2, buildEloSnapshot } from "./elo.service.js";
-import { calculateOffenseDefense } from "./offense-defense.service.js";
+import { calculateMatchStats } from "./player-stats.service.js";
 
 import { APP_CONFIG } from "../config/app.config.js";
 import {
@@ -118,6 +118,7 @@ function buildPlayersStateFromSnapshot(players, match) {
       losses: p.losses ?? 0,
       offense: Number(p.offense) || 0,
       defense: Number(p.defense) || 0,
+      statsMatches: Number(p.statsMatches) || 0,
       history: Array.isArray(p.history)
         ? p.history.filter((h) => typeof h === "string")
         : [],
@@ -146,6 +147,7 @@ function buildInitialMemoryPlayersState(players) {
       losses: 0,
       offense: 0,
       defense: 0,
+      statsMatches: 0,
       history: [],
     };
 
@@ -244,13 +246,14 @@ function calculateMatchResultForState(match, playersState) {
 
     j.offense = Number(j.offense) || 0;
     j.defense = Number(j.defense) || 0;
+    j.statsMatches = Number(j.statsMatches) || 0;
 
     if (!Array.isArray(j.history)) {
       j.history = [];
     }
   });
 
-  const matchStats = calculateOffenseDefense(match.sb, match.sr);
+  const matchStats = calculateMatchStats(match.sb, match.sr);
 
   updateElo2v2(teamBleu, teamRouge, blueWin ? 1 : 0);
 
@@ -281,12 +284,14 @@ function calculateMatchResultForState(match, playersState) {
 
     const isBluePlayer = [match.b1, match.b2].includes(j.name);
     if (isBluePlayer) {
-      j.offense += matchStats.blueOffense;
-      j.defense += matchStats.blueDefense;
+      j.offense += matchStats.blueGoalsFor;
+      j.defense += matchStats.blueGoalsAgainst;
     } else {
-      j.offense += matchStats.redOffense;
-      j.defense += matchStats.redDefense;
+      j.offense += matchStats.redGoalsFor;
+      j.defense += matchStats.redGoalsAgainst;
     }
+
+    j.statsMatches++;
 
     j.wins = wins;
     j.losses = losses;
@@ -369,6 +374,7 @@ export async function applyMatchResultToPlayers(match) {
         history: safeHistory,
         offense: Number(j.offense) || 0,
         defense: Number(j.defense) || 0,
+        statsMatches: Number(j.statsMatches) || 0,
       };
 
       try {
@@ -418,7 +424,7 @@ export async function rebuildAllStats() {
 
       const result = calculateMatchResultForState(match, playersState);
       const matchStats =
-        result?.matchStats || calculateOffenseDefense(match.sb, match.sr);
+        result?.matchStats || calculateMatchStats(match.sb, match.sr);
 
       if (!isTestMode() && match.id && result?.snapshot) {
         console.log("RESULT COMPLET", match.id, result);
@@ -467,6 +473,7 @@ export async function rebuildAllStats() {
         losses: Number(playerState.losses) || 0,
         offense: Number(playerState.offense) || 0,
         defense: Number(playerState.defense) || 0,
+        statsMatches: Number(playerState.statsMatches) || 0,
         lastDiff: Number(safeElo - safeOldElo) || 0,
         history: safeHistory,
       });

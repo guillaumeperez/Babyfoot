@@ -34,6 +34,5 @@ export const APP_CONFIG = {
     TOURNAMENTS: "tournaments",
     ARCHIVES: "archives",
     REQUESTS: "demandes",
-    COMMENTS: "comments",
   },
 };
