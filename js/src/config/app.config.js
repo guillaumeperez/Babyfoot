@@ -34,5 +34,7 @@ export const APP_CONFIG = {
     TOURNAMENTS: "tournaments",
     ARCHIVES: "archives",
     REQUESTS: "demandes",
+    PEARLS: "pearls",
+    ANNUAL_RANKING_SETTINGS: "annualRankingSettings",
   },
 };

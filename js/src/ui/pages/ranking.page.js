@@ -61,15 +61,15 @@ function renderRankingTable(players, tbodyEl) {
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
-  <td>${i + 1}</td>
-  <td>${p.name}</td>
-  <td>${p.wins}</td>
-  <td>${p.losses}</td>
-  <td><b>${p.elo}</b></td>
-  <td style="color:${color}; font-weight:bold;">${diffText}</td>
-  <td>${offense}</td>
-  <td>${defense}</td>
-  <td>${form}</td>`;
+  <td class="ranking-rank">${i + 1}</td>
+  <td class="ranking-player">${p.name}</td>
+  <td class="ranking-wins">${p.wins}</td>
+  <td class="ranking-losses">${p.losses}</td>
+  <td class="ranking-elo"><b>${p.elo}</b></td>
+  <td class="ranking-diff" style="color:${color}; font-weight:bold;">${diffText}</td>
+  <td class="ranking-offense">${offense}</td>
+  <td class="ranking-defense">${defense}</td>
+  <td class="ranking-form-cell">${form}</td>`;
 
     tbodyEl.appendChild(tr);
   });

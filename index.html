@@ -40,8 +40,8 @@
      💬 Modals
      ========================= -->
     <div class="beta-box">
-      ⚠️ News : Point offensif et défensif ! <br>
-      Off = buts marqués/match ·  Déf = buts encaissés/match<br>
+      ⚠️ News : Equipe aléatoire, Archive mise à jour, <br>
+       nouvelle emoji disponible et ajoute d'une perle possible<br>
     </div>
 
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -429,6 +429,10 @@ CREATE TOURNAMENT
       <small>(archive + remise à zéro du classement)</small>
     </button>
 
+    <button onclick="openFormEmojiManagementModal()">
+      😊 Forme — Gestion des emojis
+    </button>
+
     <button onclick="fullReset()">
       ☢ Réinitialisation complète
     </button>
@@ -496,22 +500,24 @@ CREATE TOURNAMENT
 
       <div id="podium"></div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Rang</th>
-            <th>Joueur</th>
-            <th>V</th>
-            <th>D</th>
-            <th>ELO</th>
-            <th>+/-</th>
-            <th>Off</th>
-            <th>Déf</th>
-            <th>Forme</th>
-          </tr>
-        </thead>
-        <tbody id="rankingList"></tbody>
-      </table>
+      <div class="ranking-table-wrapper">
+        <table class="ranking-modal-table">
+          <thead>
+            <tr>
+              <th>Rang</th>
+              <th>Joueur</th>
+              <th>V</th>
+              <th>D</th>
+              <th>ELO</th>
+              <th>+/-</th>
+              <th>Off</th>
+              <th>Déf</th>
+              <th>Forme</th>
+            </tr>
+          </thead>
+          <tbody id="rankingList"></tbody>
+        </table>
+      </div>
 
       <div class="actions">
         <button onclick="closeModal('ranking')" class="btn-danger">
@@ -684,100 +690,16 @@ CREATE TOURNAMENT
 ========================= -->
 <div id="archiveModal" class="modal" style="display:none;">
   <div class="modal-content" style="
-    max-width:800px;
+    max-width:900px;
     margin:auto;
     padding:20px;
     background:white;
     border-radius:12px;
-    color:black;">
+    color:black;
+    max-height:80vh;
+    overflow-y:auto;">
 
-    <h2>📦 Archives du classement</h2>
-
-    <!-- =========================
-    🔍 COMPARAISON SAISON
-    ========================= -->
-    <h3>📊 Évolution entre 2 saisons</h3>
-
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <select id="archiveA" style="flex:1; padding:10px;">
-        <option value="">Saison A</option>
-      </select>
-
-      <select id="archiveB" style="flex:1; padding:10px;">
-        <option value="">Saison B</option>
-      </select>
-
-      <button onclick="runArchiveComparison()" style="
-        padding:10px 14px;
-        background:#3b82f6;
-        color:white;
-        border:none;
-        border-radius:8px;
-        cursor:pointer;
-      ">
-        Comparer
-      </button>
-    </div>
-
-    <table style="width:100%; margin-top:10px;">
-      <thead>
-        <tr>
-          <th>Joueur</th>
-          <th>Début</th>
-          <th>Fin</th>
-          <th>Δ ELO</th>
-        </tr>
-      </thead>
-
-      <tbody id="evolutionTable"></tbody>
-    </table>
-
-    <hr style="margin:20px 0;">
-
-    <!-- =========================
-    📦 ARCHIVE SIMPLE
-    ========================= -->
-
-    <h3>📦 Voir une archive</h3>
-
-    <select id="archiveSelect" style="
-      width:100%;
-      padding:10px;
-      margin:10px 0;
-      border-radius:8px;
-    ">
-      <option value="">-- Choisir une archive --</option>
-    </select>
-
-    <table class="archive-ranking-table">
-  <thead>
-    <tr>
-      <th>Rang</th>
-      <th>Joueur</th>
-      <th>V</th>
-      <th>D</th>
-      <th>O</th>
-      <th>Df</th>
-      <th>ELO</th>
-    </tr>
-  </thead>
-
-  <tbody id="archiveTable"></tbody>
-</table>
-
-    <button onclick="closeArchiveModal()" style="
-      margin-top:15px;
-      background:#ef4444;
-      color:white;
-      border:none;
-      padding:10px 14px;
-      border-radius:8px;
-      cursor:pointer;
-      width:100%;
-      font-weight:bold;
-    ">
-      ❌ Fermer
-    </button>
+    <div id="archiveContent"></div>
 
   </div>
 </div>
@@ -792,9 +714,9 @@ CREATE TOURNAMENT
 
       <div class="actions">
 
-        <button onclick="showRandomPearl()" class="btn-add">
+        <button onclick="handleAddPearl()" class="btn-add">
           <img src="img/addPlayer.png" alt="">
-          Afficher une perle
+           Ajouter une perle
         </button>
 
         <button onclick="closeModal('pearls')" class="btn-danger">
@@ -820,30 +742,66 @@ CREATE TOURNAMENT
    🎲 ÉQUIPES ALÉATOIRES
    ========================= -->
   <div id="randomTeams" class="modal">
-    <div class="box">
+    <div class="box" style="max-width: 780px; width: min(92vw, 780px);">
 
       <h3 class="title">🎲 Équipes aléatoires</h3>
 
-      <!-- ÉQUIPE BLEUE -->
-      <div style="background:#dbeafe; border:3px solid #3b82f6; padding:20px; border-radius:8px; margin-bottom:20px;">
-        <h4 style="margin-top:0; color:#1e40af;">🔵 Équipe Bleue</h4>
-        <div id="randomTeamBlue" style="font-size:52px; font-weight:bold; color:#1e40af; text-align:center; padding:20px;"></div>
+      <div
+        id="randomTeamsArena"
+        style="
+          position: relative;
+          width: 100%;
+          height: 320px;
+          border: 3px solid #1f2937;
+          border-radius: 18px;
+          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+          margin-bottom: 12px;
+          touch-action: none;
+          user-select: none;
+          overflow: hidden;
+          box-shadow: inset 0 0 12px rgba(0,0,0,0.08);
+        "
+      ></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div id="randomTeamsStatus" style="font-size: 26px; font-weight:700; color:#111827;">0 / 4</div>
+        <div id="randomTeamsCountdown" style="font-size: 34px; font-weight: 800; min-width: 48px; text-align: center; color: #111827;"> </div>
       </div>
 
-      <!-- ÉQUIPE ROUGE -->
-      <div style="background:#fee2e2; border:3px solid #ef4444; padding:20px; border-radius:8px; margin-bottom:20px;">
-        <h4 style="margin-top:0; color:#b91c1c;">🔴 Équipe Rouge</h4>
-        <div id="randomTeamRed" style="font-size:52px; font-weight:bold; color:#ef4444; text-align:center; padding:20px;"></div>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top: 12px; margin-bottom: 22px;">
+        <div id="randomTeamBlue" style="font-size: 18px; font-weight:700; color:#1d4ed8; min-height: 26px;">🔵 ÉQUIPE BLEUE</div>
+        <div id="randomTeamRed" style="font-size: 18px; font-weight:700; color:#b91c1c; min-height: 26px;">🔴 ÉQUIPE ROUGE</div>
       </div>
 
-      <!-- ACTIONS -->
       <div class="actions">
 
         <button onclick="recalculateTeams()" class="btn-danger">
-          🔀 Recalculer
+          🔄 Recommencer
         </button>
 
-        <button onclick="closeModal('randomTeams')" class="btn-danger">
+        <button onclick="closeRandomTeamsModal()" class="btn-danger">
+          <img src="img/closed.png" alt="">
+          Fermer
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================
+   😊 GESTION DES EMOJIS DE FORME (ADMIN)
+   ========================= -->
+  <div id="formEmojiSettingsModal" class="modal">
+    <div class="box">
+
+      <h3 class="title">😊 Gestion des emojis de Forme</h3>
+
+      <div id="formEmojiSettingsList" style="max-height: 420px; overflow-y: auto; margin-bottom: 16px;"></div>
+
+      <div class="actions">
+
+        <button onclick="closeModal('formEmojiSettingsModal')" class="btn-danger">
           <img src="img/closed.png" alt="">
           Fermer
         </button>

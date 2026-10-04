@@ -54,39 +54,6 @@ export function limitScore(input) {
 
 window.limitScore = limitScore;
 
-function updateScoreStatsPreview() {
-  const sb = parseInt(document.getElementById("sb")?.value);
-  const sr = parseInt(document.getElementById("sr")?.value);
-  const preview = document.getElementById("scoreStatsPreview");
-
-  if (!preview) return;
-
-  if (Number.isNaN(sb) || Number.isNaN(sr)) {
-    preview.innerHTML = "";
-    return;
-  }
-
-  const stats = calculateMatchStats(sb, sr);
-
-  preview.innerHTML = `
-    <div class="score-preview-box">
-      <div class="score-preview-title">📊 Statistiques du match</div>
-      <div class="score-preview-team team-blue">
-        <div>🔵 Équipe Bleue</div>
-        <div>⚡ Offensive : ${stats.blueGoalsFor} buts</div>
-        <div>🛡️ Défensive : ${stats.blueGoalsAgainst} encaissés</div>
-      </div>
-      <div class="score-preview-team team-red">
-        <div>🔴 Équipe Rouge</div>
-        <div>⚡ Offensive : ${stats.redGoalsFor} buts</div>
-        <div>🛡️ Défensive : ${stats.redGoalsAgainst} encaissés</div>
-      </div>
-    </div>
-  `;
-}
-
-window.updateScoreStatsPreview = updateScoreStatsPreview;
-
 // =========================
 // 🎯 ÉCOUTEURS FORMULAIRE SCORE
 // =========================
@@ -101,14 +68,10 @@ export function initScoreFormListeners() {
     if (field) {
       field.addEventListener("input", () => {
         Toast.clearScore();
-        updateScoreStatsPreview();
       });
       field.addEventListener("change", () => {
         Toast.clearScore();
-        updateScoreStatsPreview();
       });
     }
   });
-
-  updateScoreStatsPreview();
 }

@@ -11,10 +11,16 @@ import { deleteAllMatches } from "../../repositories/matches.repository.js";
 import { deleteAllTournaments } from "../../repositories/tournaments.repository.js";
 import { archiveAndResetSeason } from "../../services/archive.service.js";
 import { updatePlayer } from "../../repositories/players.repository.js";
+import {
+  ensureDefaultMumuFormEmoji,
+  getFormEmojiSettings,
+  setPlayerFormEmojiState,
+} from "../../repositories/form-emoji.repository.js";
 
 import { Toast } from "../components/toast.js";
 import { confirmAction } from "../components/confirm.js";
 import { openModal, closeModal } from "../components/modal.js";
+import { isAdmin } from "../../core/state.js";
 import { loadRanking } from "../pages/ranking.page.js";
 import { loadMatches } from "../pages/matches.page.js";
 import {
@@ -140,6 +146,82 @@ export async function handleOpenRenameModal(id, name) {
 }
 
 window.openRenameModal = handleOpenRenameModal;
+
+export async function handleOpenFormEmojiManagementModal() {
+  if (!isAdmin()) {
+    Toast.error("❌ Accès réservé à l'administration");
+    return;
+  }
+
+  const list = document.getElementById("formEmojiSettingsList");
+  if (!list) return;
+
+  list.innerHTML = "<p>Chargement...</p>";
+
+  const players = (await getAllPlayers()).filter((p) => p.active !== false);
+  const defaultSettings = await ensureDefaultMumuFormEmoji(players);
+  const settings = await getFormEmojiSettings();
+  const effectiveSettings = { ...defaultSettings, ...settings };
+
+  list.innerHTML = "";
+
+  if (players.length === 0) {
+    list.innerHTML = "<p>Aucun joueur actif.</p>";
+    openModal("formEmojiSettingsModal");
+    return;
+  }
+
+  players.forEach((player) => {
+    const row = document.createElement("div");
+    row.style = `
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:10px 8px;
+      margin-bottom:8px;
+      border:1px solid #ddd;
+      border-radius:8px;
+      background:#f9fafb;
+    `;
+
+    const playerName = document.createElement("span");
+    playerName.textContent = player.name || "Joueur";
+    playerName.style.fontWeight = "bold";
+
+    const toggleWrap = document.createElement("div");
+    toggleWrap.style.display = "flex";
+    toggleWrap.style.alignItems = "center";
+    toggleWrap.style.gap = "8px";
+
+    const status = document.createElement("span");
+    const isEnabled = Boolean(effectiveSettings[String(player.id)] === true);
+    status.textContent = isEnabled ? "🟢 Activé" : "⚪ Désactivé";
+    status.style.color = isEnabled ? "#16a34a" : "#6b7280";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = isEnabled;
+    checkbox.title = `Activer/désactiver les emojis spéciaux pour ${player.name}`;
+    checkbox.onchange = async () => {
+      await setPlayerFormEmojiState(player.id, checkbox.checked);
+      const updatedSettings = await getFormEmojiSettings();
+      const newStatus = Boolean(updatedSettings[String(player.id)] === true);
+      status.textContent = newStatus ? "🟢 Activé" : "⚪ Désactivé";
+      status.style.color = newStatus ? "#16a34a" : "#6b7280";
+    };
+
+    toggleWrap.appendChild(status);
+    toggleWrap.appendChild(checkbox);
+    row.appendChild(playerName);
+    row.appendChild(toggleWrap);
+    list.appendChild(row);
+  });
+
+  openModal("formEmojiSettingsModal");
+}
+
+window.openFormEmojiManagementModal = handleOpenFormEmojiManagementModal;
 
 export async function handleConfirmRename() {
   if (!_playerToRename) return;

@@ -37,7 +37,12 @@ import {
   updateTeamModeUI,
   openTournamentTab,
 } from "./ui/pages/tournament.page.js";
-import { loadPearls, handleShowRandomPearl } from "./ui/pages/pearls.page.js";
+import {
+  loadPearls,
+  handleAddPearl,
+  cancelAddPearl,
+  savePearlFromForm,
+} from "./ui/pages/pearls.page.js";
 import {
   validatePlayer,
   initScoreFormListeners,
@@ -87,6 +92,7 @@ window.APP_MODE = detectAppMode(); // compat: certains modules legacy lisent enc
 
 registerOnOpen("players", loadPlayersModal);
 registerOnOpen("ranking", loadRanking);
+registerOnOpen("pearls", loadPearls);
 registerOnOpen("history", async () => {
   await loadMatches();
   await loadPlayersFilter();
@@ -133,11 +139,13 @@ window.loadPlayersFilter = loadPlayersFilter;
 window.loadPlayersTrendFilter = loadPlayersTrendFilter;
 window.loadTournaments = loadTournaments;
 window.loadPearls = loadPearls;
+window.handleAddPearl = handleAddPearl;
+window.cancelAddPearl = cancelAddPearl;
+window.savePearlFromForm = savePearlFromForm;
 
 // Fonctions appelées depuis onclick du HTML
 window.addPlayer = handleAddPlayer;
 window.saveMatch = handleSaveMatch;
-window.showRandomPearl = handleShowRandomPearl;
 window.createTournament = createTournament;
 window.addManualTeam = addManualTeam;
 window.updateTeamModeUI = updateTeamModeUI;
