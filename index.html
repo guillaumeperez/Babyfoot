@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Baby-foot AGAP</title>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/offense-defense.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+  <div class="page">
+
+    <div class="header">
+      <img src="img/logo2.png" alt="Logo Babyfoot" class="logo">
+    </div>
+
+    <div id="adminBadge" style="
+  display:none;
+  position:fixed;
+  top:10px;
+  right:10px;
+  background:#dc2626;
+  color:white;
+  padding:6px 12px;
+  border-radius:20px;
+  font-weight:bold;
+  font-size:12px;
+  z-index:9999;
+">
+      ⚙️ MODE ADMIN
+    </div>
+
+    <!-- =========================
+     💬 Modals
+     ========================= -->
+    <div class="beta-box">
+      ⚠️ News : Equipe aléatoire, Archive mise à jour, <br>
+       nouvelle emoji disponible et ajoute d'une perle possible<br>
+    </div>
+
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+    
+<div class="menu">
+
+  <!-- =========================
+  LIGNE 1
+  ========================= -->
+  <button class="carte big" onclick="openModal('score')">
+    <lottie-player src="lottie/score.json" loop autoplay></lottie-player>
+    <span>Ajouter score</span>
+  </button>
+
+  <button class="carte big" onclick="openRanking()">
+    <lottie-player src="lottie/ranking.json" loop autoplay></lottie-player>
+    <span>Classement</span>
+  </button>
+
+  <button class="carte big" onclick="openHistory()">
+    <lottie-player src="lottie/history.json" loop autoplay></lottie-player>
+    <span>Historique</span>
+  </button>
+
+
+  <!-- =========================
+  LIGNE 2
+  ========================= -->
+  <button class="carte big" onclick="openModal('tournament')">
+    <lottie-player src="lottie/tournament.json" loop autoplay></lottie-player>
+    <span>Tournoi</span>
+  </button>
+
+  <button class="carte big" onclick="openPlayersModal()">
+    <lottie-player src="lottie/players.json" loop autoplay></lottie-player>
+    <span>Joueurs</span>
+  </button>
+
+  <button class="carte big pearls" onclick="openModal('pearls')">
+    <lottie-player src="lottie/comment.json" loop autoplay></lottie-player>
+    <span> Les Perles</span>
+  </button>
+
+
+  <!-- =========================
+  LIGNE 3
+  ========================= -->
+  <button class="carte big" onclick="openArchiveModal()">
+    <lottie-player src="lottie/archives.json" loop autoplay></lottie-player>
+    <span>Archives</span>
+  </button>
+
+  <button class="carte big" onclick="openModal('rules')">
+    <lottie-player src="lottie/rules.json" loop autoplay></lottie-player>
+    <span>Règles</span>
+  </button>
+
+  <button class="carte big" onclick="openRandomTeams()">
+  <lottie-player   src="lottie/aléatoire.json"  loop autoplay> </lottie-player>
+  <span>Équipes</span>
+</button>
+
+  <button class="carte big admin" onclick="loginAdmin()">
+    <lottie-player src="lottie/loginAdmin.json" loop autoplay></lottie-player>
+    <span>Admin</span>
+  </button>
+
+</div>
+
+    <!-- =========================
+     👥 JOUEURS
+     ========================= -->
+    <div id="players" class="modal">
+  <div class="box">
+
+    <h3 class="title">Joueurs</h3>
+
+    <!-- INPUT AJOUT -->
+    <input
+      id="playerInput"
+      type="text"
+      placeholder="Nom du joueur"
+      oninput="validatePlayer()"
+    >
+
+    <!-- MESSAGE ERREUR -->
+    <div
+      id="playerError"
+      class="error-message"
+      style="display:none;"
+    ></div>
+
+    <!-- ACTIONS -->
+    <div class="actions">
+
+      <button onclick="addPlayer()" class="btn-add">
+        <img src="img/addPlayer.png" alt="">
+        Ajouter joueur
+      </button>
+
+      <button onclick="closeModal('players')" class="btn-danger">
+        <img src="img/closed.png" alt="">
+        Fermer
+      </button>
+
+    </div>
+
+    <!-- 📋 DEMANDES EN ATTENTE -->
+    <div style="
+      margin-top: 20px;
+      padding: 15px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      border-left: 4px solid #3b82f6;
+    ">
+      <h4 style="margin: 0 0 10px 0; color: #1f2937;">📋 Demandes en attente de validation</h4>
+      <div id="pendingRequestsList" style="
+        color: #1f2937;
+        font-size: 14px;
+        line-height: 1.6;
+      ">
+        <p style="color: #6b7280; margin: 0;">Chargement...</p>
+      </div>
+    </div>
+
+    <div id="adminPlayersPanel" style="display:none;">
+  <h4>⚙️ Gestion joueurs</h4>
+  <div id="adminPlayersList"></div>
+</div>
+
+  </div>
+</div>
+
+    <!-- =========================
+🏆 TOURNOI
+========================= -->
+    <div id="tournament" class="modal">
+
+      <div class="box tournament-box">
+
+        <h3 class="title">
+          <img src="img/tournament.png" alt="">
+          Tournois
+        </h3>
+
+        <div class="tournament-menu">
+
+
+          <!-- CREATE -->
+          <button class="accordion" onclick="openTournamentTab('create')">
+            ➕ Créer tournoi
+          </button>
+
+          <!-- MATCHES -->
+          <button class="accordion" onclick="openTournamentTab('active')">
+            ⚔️ Tournoi en cours
+          </button>
+
+          <!-- RANKING -->
+          <button class="accordion" onclick="openTournamentTab('ranking')">
+            🏆 Classements
+          </button>
+
+          <!-- HISTORY -->
+          <button class="accordion" onclick="openTournamentTab('history')">
+            📜 Historique
+          </button>
+
+        </div>
+
+        <!-- =========================
+CREATE TOURNAMENT
+========================= -->
+        <div id="tournament-create" class="tournament-tab" style="display:none;">
+          <h4>📊 Système de points</h4>
+
+          <div class="points-grid">
+
+            <div>
+              <label>Victoire <span class="points-label">(points)</span></label>
+              <input class="tournament-point-input" id="winPoints" type="number" value="3">
+            </div>
+
+            <div>
+              <label>Défaite <span class="points-label">(points)</span></label>
+              <input class="tournament-point-input" id="lossPoints" type="number" value="0">
+            </div>
+
+            <div>
+              <label>Bonus offensif <span class="points-label">(points)</span></label>
+              <input class="tournament-point-input" id="offBonus" type="number" value="1">
+            </div>
+
+            <div>
+              <label>Bonus défensif <span class="points-label">(points)</span></label>
+              <input class="tournament-point-input" id="defBonus" type="number" value="1">
+            </div>
+
+          </div>
+          <label>Nom du tournoi</label>
+
+          <input id="tournamentName" type="text" placeholder="Ex: Tournoi AGAP">
+
+          <label>Création des équipes</label>
+
+          <select id="teamMode" onchange="updateTeamModeUI()">
+            <option value="random">
+              🔀 Aléatoire
+            </option>
+
+            <option value="elo">
+              ⚖️ Équilibré ELO
+            </option>
+
+            <option value="manual">
+              ✋ Manuel
+            </option>
+          </select>
+
+          <!-- SECTION CRÉATION MANUELLE (cachée par défaut) -->
+          <div id="manualTeamSection"
+            style="display: none; margin-top: 20px; border: 2px solid #3b82f6; padding: 15px; border-radius: 10px;">
+            <h4>👥 Créer vos équipes</h4>
+
+            <!-- CONTENEUR ÉQUIPES DYNAMIQUE -->
+            <div id="manualTeamContainer"></div>
+
+            <!-- BOUTON AJOUTER ÉQUIPE -->
+            <button type="button" onclick="addManualTeam()" class="btn-add" style="margin-top: 15px;">
+              <img src="img/save.png" alt="">
+              Ajouter une équipe
+            </button>
+          </div>
+
+          <div class="checkbox-line">
+
+            <input type="checkbox" id="doubleRound" checked>
+
+            <label for="doubleRound">
+              Match aller / retour
+            </label>
+
+          </div>
+
+          <div class="actions">
+
+            <button onclick="createTournament()" class="btn-add">
+              <img src="img/save.png" alt="">
+              Créer tournoi
+            </button>
+
+            <button onclick="closeModal('tournament')" class="btn-danger">
+              <img src="img/closed.png" alt="">
+              Fermer
+            </button>
+
+          </div>
+        </div>
+
+        <!-- ACTIVE TOURNAMENTS -->
+        <div id="tournament-active" class="tournament-tab" style="display:none;">
+          <h3>⚔️ Tournoi en cours</h3>
+
+          <div id="activeTournaments"></div>
+
+          <h4>🏅 Podium récent (48h)</h4>
+          <div id="recentTournaments"></div>
+
+          <div class="actions">
+            <button onclick="closeModal('tournament')" class="btn-danger">
+              <img src="img/closed.png" alt="">
+              Fermer
+            </button>
+          </div>
+
+        </div>
+
+
+        <!-- MATCHES -->
+        <div id="tournament-matches" class="tournament-tab" style="display:none;">
+
+          <h3>⚔️ Matchs</h3>
+
+          <div id="tournamentMatches"></div>
+
+          <div class="actions">
+            <button onclick="closeModal('tournament')" class="btn-danger">
+              <img src="img/closed.png" alt="">
+              Fermer
+            </button>
+          </div>
+
+        </div>
+
+        <!-- RANKING -->
+        <div id="tournament-ranking" class="tournament-tab" style="display:none;">
+
+          <h3>🏆 Classement</h3>
+
+          <div id="tournamentWinner"></div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Équipe</th>
+                <th>Pts</th>
+                <th>V</th>
+                <th>D</th>
+              </tr>
+            </thead>
+
+            <tbody id="tournamentRanking"></tbody>
+          </table>
+
+          <div class="actions">
+            <button onclick="closeModal('tournament')" class="btn-danger">
+              <img src="img/closed.png" alt="">
+              Fermer
+            </button>
+          </div>
+
+        </div>
+
+        <!-- HISTORY -->
+        <div id="tournament-history" class="tournament-tab" style="display:none;">
+
+          <h3>📜 Historique</h3>
+          <div id="finishedTournaments"></div>
+
+          <div class="actions">
+            <button onclick="closeModal('tournament')" class="btn-danger">
+              <img src="img/closed.png" alt="">
+              Fermer
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+
+  </div>
+  </div>
+
+
+<!-- =========================
+⚙️ ADMINISTRATION
+========================= -->
+<div id="adminPanel" style="display:none;">
+
+  <h3>⚙️ Administration</h3>
+
+  <h4>📩 Demandes en attente</h4>
+  <div id="listeDemandes"></div>
+
+  <hr>  
+
+  <h4>🛠️ Outils administrateur</h4>
+
+  <div style="
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:10px;
+  ">
+
+    <button onclick="resetAllMatches()">
+      🗑 Supprimer tous les matchs
+    </button>
+
+    <button onclick="rebuildAllStats()">
+  🔧 Recalculer tous les ELO
+    </button>
+
+    <button onclick="resetAllTournaments()">
+      🏆 Supprimer tous les tournois
+    </button>
+
+    <button onclick="resetAllWithArchive()">
+      📦 Clôturer la saison
+      <br>
+      <small>(archive + remise à zéro du classement)</small>
+    </button>
+
+    <button onclick="openFormEmojiManagementModal()">
+      😊 Forme — Gestion des emojis
+    </button>
+
+    <button onclick="fullReset()">
+      ☢ Réinitialisation complète
+    </button>
+
+    <button onclick="logoutAdmin()">
+      🚪 Quitter l'administration
+    </button>
+
+  </div>
+
+</div>
+
+  <!-- =========================
+   ➕ SCORE
+   ========================= -->
+  <div id="score" class="modal">
+    <div class="box">
+
+      <h3 class="title"> <img src="img/scoring.png" alt=""> Ajouter un score </h3>
+
+      <!-- BLEU -->
+      <div class="blue">
+        <h4>🔵 Équipe Bleue</h4>
+        <select id="b1"></select>
+        <select id="b2"></select>
+        <input id="sb" type="number">
+      </div>
+
+      <!-- ROUGE -->
+      <div class="red">
+        <h4>🔴 Équipe Rouge</h4>
+        <select id="r1"></select>
+        <select id="r2"></select>
+        <input id="sr" type="number">
+      </div>
+
+      <div id="scoreStatsPreview" style="margin-top:16px;"></div>
+
+      <div class="actions">
+
+        <button onclick="saveMatch(event)" class="btn-add">
+          <img src="img/save.png" alt="">
+          Enregistrer
+        </button>
+
+        <button onclick="closeModal('score')" class="btn-danger">
+          <img src="img/closed.png" alt="">
+          Fermer
+        </button>
+
+      </div>
+
+      <div id="scoreMessage"></div>
+
+    </div>
+  </div>
+
+  <!-- =========================
+🏆 CLASSEMENT
+========================= -->
+  <div id="ranking" class="modal">
+    <div class="box" style="overflow:auto;">
+
+      <h3 class="title"> <img src="img/classement.png" alt=""> Classement </h3>
+
+      <div id="podium"></div>
+
+      <div class="ranking-table-wrapper">
+        <table class="ranking-modal-table">
+          <thead>
+            <tr>
+              <th>Rang</th>
+              <th>Joueur</th>
+              <th>V</th>
+              <th>D</th>
+              <th>ELO</th>
+              <th>+/-</th>
+              <th>Off</th>
+              <th>Déf</th>
+              <th>Forme</th>
+            </tr>
+          </thead>
+          <tbody id="rankingList"></tbody>
+        </table>
+      </div>
+
+      <div class="actions">
+        <button onclick="closeModal('ranking')" class="btn-danger">
+          <img src="img/closed.png" alt="">
+          Fermer
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================
+📜 Règles
+========================= -->
+
+  <div id="rules" class="modal">
+    <div class="box" style="text-align:left; max-height:80vh; overflow:auto;">
+
+      <h3 class="title"> <img src="img/rules.png" alt="">
+        Règles du jeu
+      </h3>
+
+      <!-- FORMATION -->
+      <button class="accordion"> <img src="img/formationequipe.png" alt="">
+        Formation des équipes
+      </button>
+
+      <div class="panel">
+        <ul>
+          <li> Deux équipes de 2 joueurs</li>
+          <li> Tous les joueurs peuvent jouer sur n'importe quel poste</li>
+        </ul>
+      </div>
+
+      <!-- MATCH -->
+      <button class="accordion">⚽ Déroulement d'un match</button>
+      <div class="panel">
+        <ul>
+          <li> Premier à 10 points gagne</li>
+          <li> Engagement au centre avec 2 touches obligatoires</li>
+          <li> Après un but, remise en jeu de côté de l'équipe encaissante</li>
+          <li> Roulettes interdites</li>
+          <li> Gamelles = -1 point</li>
+          <li> Tir du milieu = 2 points, 3 points max</li>
+          <li> Lobe gardien = + 2 points</li>
+          <li> Sortie de balle = remise en jeu type corner</li>
+        </ul>
+      </div>
+
+      <button class="accordion">📊 Système ELO</button>
+      <div class="panel">
+        <ul>
+          <li>📈 Chaque joueur commence à 2000 points ELO</li>
+          <li>🏆 Une victoire fait gagner des points</li>
+          <li>❌ Une défaite fait perdre des points</li>
+          <li>⚖️ Le gain/perte dépend du niveau des adversaires</li>
+          <li>🔥 Battre plus fort = gros gain</li>
+          <li>💀 Perdre contre plus faible = grosse perte</li>
+          <li>👥 Calcul basé sur les équipes (2v2)</li>
+          <li>📊 Le classement est basé uniquement sur l’ELO</li>
+        </ul>
+      </div>
+
+      <!-- TOURNOI -->
+      <button class="accordion">🏆 Tournoi</button>
+      <div class="panel">
+        <ul>
+          <li>📌 Le tournoi se joue en matchs 2v2.</li>
+          <li>🎯 Chaque match se joue en 10 points (premier à 10 gagne).</li>
+          <li>🔀 Les équipes sont créées en mode aléatoire ou équilibré ELO selon le choix.</li>
+          <li>📊 Les valeurs de points sont personnalisables : tu peux mettre ce que tu souhaites pour victoire, défaite
+            et bonus.</li>
+          <li>✅ Exemple : Victoire = 3 points, Défaite = 0 point, Bonus offensif = 1 point, Bonus défensif = 1 point.
+          </li>
+          <li>🧠 Si tu coches « match aller / retour », cela ajoute un match de retour, mais cela ne transforme pas le
+            tournoi entier en un format spécial.</li>
+          <li>⚖️ En cas d'égalité de points, le classement se fait par différence de buts, puis par nombre de victoires.
+          </li>
+          <li>🚨 Une équipe qui abandonne ou ne joue pas reçoit un score de 0 et l'autre équipe gagne.</li>
+          <li>📌 Après chaque match, le classement et l'historique sont mis à jour automatiquement.</li>
+        </ul>
+      </div>
+
+      <br>
+
+      <div class="actions">
+        <button onclick="closeModal('rules')" class="btn-danger">
+          <img src="img/closed.png" alt="">
+          Fermer
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+  </div>
+
+  <!-- =========================
+📜 HISTORIQUE + TENDANCE ELO
+========================= -->
+  <div id="history" class="modal">
+    <div class="box history-box">
+
+      <h3>📜 Historique des matchs</h3>
+
+      <!-- =========================
+         FILTRES HISTORIQUE
+    ========================= -->
+      <div class="history-top">
+
+        <!-- 👤 filtre joueur -->
+        <select id="historyPlayerFilter" onchange="loadMatches(); loadPlayerEloTrend();">
+          <option value="">-- Tous les joueurs --</option>
+        </select>
+
+        <!-- 🟢 filtre victoire / défaite -->
+        <select id="historyResultFilter" onchange="loadMatches()">
+          <option value="">-- Tous les résultats --</option>
+          <option value="win">Victoire</option>
+          <option value="loss">Défaite</option>
+        </select>
+
+        <!-- 📜 liste historique -->
+        <div class="history-list">
+          <ul id="matchHistory"></ul>
+        </div>
+
+      </div>
+
+      <!-- =========================
+         GRAPHIQUE
+    ========================= -->
+      <div class="history-bottom">
+
+        <h3>📈 Évolution ELO</h3>
+
+        <!-- 👤 joueur 1 -->
+        <select id="trendPlayerFilter" onchange="loadPlayerEloTrend()">
+          <option value="">-- Joueur --</option>
+        </select>
+
+        <!-- 👤 joueur 2 optionnel -->
+        <select id="trendPlayerFilter2" onchange="loadPlayerEloTrend()">
+          <option value="">-- Joueur 2 (optionnel) --</option>
+        </select>
+
+        <div style="margin-top:10px;">
+          <canvas id="eloChart"></canvas>
+        </div>
+
+        <div id="trendStats"></div>
+
+      </div>
+
+      <!-- =========================
+         BOUTON FERMER
+    ========================= -->
+      <div class="actions">
+        <button onclick="closeModal('history')" class="btn-danger">
+          <img src="img/closed.png" alt="">
+          Fermer
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+<!-- =========================
+📦 MODAL ARCHIVES
+========================= -->
+<div id="archiveModal" class="modal" style="display:none;">
+  <div class="modal-content" style="
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+    background:white;
+    border-radius:12px;
+    color:black;
+    max-height:80vh;
+    overflow-y:auto;">
+
+    <div id="archiveContent"></div>
+
+  </div>
+</div>
+
+ <!-- =========================
+�💬 COMMENTAIRES
+========================= -->
+  <div id="pearls" class="modal">
+    <div class="box">
+
+      <h3> Les Perles du Baby</h3>
+
+      <div class="actions">
+
+        <button onclick="handleAddPearl()" class="btn-add">
+          <img src="img/addPlayer.png" alt="">
+           Ajouter une perle
+        </button>
+
+        <button onclick="closeModal('pearls')" class="btn-danger">
+          <img src="img/closed.png" alt="">
+          Fermer
+        </button>
+
+      </div>
+
+      <div id="pearlsContainer"></div>
+
+    </div>
+  </div>
+
+
+  </div>
+
+  <footer>
+    © 2026 - J'peux pas j'ai baby-foot - Guillaume PEREZ
+  </footer>
+
+  <!-- =========================
+   🎲 ÉQUIPES ALÉATOIRES
+   ========================= -->
+  <div id="randomTeams" class="modal">
+    <div class="box" style="max-width: 780px; width: min(92vw, 780px);">
+
+      <h3 class="title">🎲 Équipes aléatoires</h3>
+
+      <div
+        id="randomTeamsArena"
+        style="
+          position: relative;
+          width: 100%;
+          height: 320px;
+          border: 3px solid #1f2937;
+          border-radius: 18px;
+          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+          margin-bottom: 12px;
+          touch-action: none;
+          user-select: none;
+          overflow: hidden;
+          box-shadow: inset 0 0 12px rgba(0,0,0,0.08);
+        "
+      ></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div id="randomTeamsStatus" style="font-size: 26px; font-weight:700; color:#111827;">0 / 4</div>
+        <div id="randomTeamsCountdown" style="font-size: 34px; font-weight: 800; min-width: 48px; text-align: center; color: #111827;"> </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top: 12px; margin-bottom: 22px;">
+        <div id="randomTeamBlue" style="font-size: 18px; font-weight:700; color:#1d4ed8; min-height: 26px;">🔵 ÉQUIPE BLEUE</div>
+        <div id="randomTeamRed" style="font-size: 18px; font-weight:700; color:#b91c1c; min-height: 26px;">🔴 ÉQUIPE ROUGE</div>
+      </div>
+
+      <div class="actions">
+
+        <button onclick="recalculateTeams()" class="btn-danger">
+          🔄 Recommencer
+        </button>
+
+        <button onclick="closeRandomTeamsModal()" class="btn-danger">
+          <img src="img/closed.png" alt="">
+          Fermer
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================
+   😊 GESTION DES EMOJIS DE FORME (ADMIN)
+   ========================= -->
+<div id="formEmojiSettingsModal" class="modal">
+  <div class="box">
+
+    <!-- =========================
+         📋 LISTE DES JOUEURS
+         ========================= -->
+    <div id="formEmojiPlayerListView">
+
+      <h3 class="title">
+        😊 Gestion des emojis de Forme
+      </h3>
+
+      <div
+        id="formEmojiSettingsList"
+        style="
+          max-height:420px;
+          overflow-y:auto;
+          margin-bottom:16px;
+        "
+      ></div>
+
+      <div class="actions">
+
+        <button
+          onclick="closeModal('formEmojiSettingsModal')"
+          class="btn-danger"
+        >
+          <img src="img/closed.png" alt="">
+          Fermer
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- =========================
+         ✏️ ÉDITION DU JOUEUR
+         ========================= -->
+    <div
+      id="formEmojiPlayerEditor"
+      style="display:none;"
+    ></div>
+
+  </div>
+</div>
+
+  <!-- =========================
+   ✏️ RENOMMER UN JOUEUR (ADMIN)
+   ========================= -->
+  <div id="renamePlayerModal" class="modal">
+    <div class="box">
+
+      <h3 class="title">✏️ Renommer un joueur</h3>
+
+      <input
+        id="renamePlayerInput"
+        type="text"
+        placeholder="Nouveau nom"
+        style="width:100%; padding:8px; margin-bottom:16px; border:1px solid #ddd; border-radius:4px; font-size:16px;"
+      >
+
+      <div class="actions">
+
+        <button onclick="confirmRename()" class="btn-add">
+          <img src="img/addPlayer.png" alt="">
+          Confirmer
+        </button>
+
+        <button onclick="closeModal('renamePlayerModal')" class="btn-danger">
+          <img src="img/closed.png" alt="">
+          Annuler
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="js/src/main.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</body>
+
+</html>
