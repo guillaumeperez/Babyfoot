@@ -792,16 +792,33 @@ CREATE TOURNAMENT
   <!-- =========================
    😊 GESTION DES EMOJIS DE FORME (ADMIN)
    ========================= -->
-  <div id="formEmojiSettingsModal" class="modal">
-    <div class="box">
+<div id="formEmojiSettingsModal" class="modal">
+  <div class="box">
 
-      <h3 class="title">😊 Gestion des emojis de Forme</h3>
+    <!-- =========================
+         📋 LISTE DES JOUEURS
+         ========================= -->
+    <div id="formEmojiPlayerListView">
 
-      <div id="formEmojiSettingsList" style="max-height: 420px; overflow-y: auto; margin-bottom: 16px;"></div>
+      <h3 class="title">
+        😊 Gestion des emojis de Forme
+      </h3>
+
+      <div
+        id="formEmojiSettingsList"
+        style="
+          max-height:420px;
+          overflow-y:auto;
+          margin-bottom:16px;
+        "
+      ></div>
 
       <div class="actions">
 
-        <button onclick="closeModal('formEmojiSettingsModal')" class="btn-danger">
+        <button
+          onclick="closeModal('formEmojiSettingsModal')"
+          class="btn-danger"
+        >
           <img src="img/closed.png" alt="">
           Fermer
         </button>
@@ -809,7 +826,17 @@ CREATE TOURNAMENT
       </div>
 
     </div>
+
+    <!-- =========================
+         ✏️ ÉDITION DU JOUEUR
+         ========================= -->
+    <div
+      id="formEmojiPlayerEditor"
+      style="display:none;"
+    ></div>
+
   </div>
+</div>
 
   <!-- =========================
    ✏️ RENOMMER UN JOUEUR (ADMIN)
