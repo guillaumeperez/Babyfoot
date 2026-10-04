@@ -136,12 +136,15 @@ let _playerToRename = null; // Stocke le joueur sélectionné pour renommage
 
 export async function handleOpenRenameModal(id, name) {
   _playerToRename = { id, name };
+
   const input = document.getElementById("renamePlayerInput");
+
   if (input) {
     input.value = name;
     input.focus();
     input.select();
   }
+
   openModal("renamePlayerModal");
 }
 
@@ -159,6 +162,7 @@ export async function handleOpenFormEmojiManagementModal() {
   list.innerHTML = "<p>Chargement...</p>";
 
   const players = (await getAllPlayers()).filter((p) => p.active !== false);
+
   const defaultSettings = await ensureDefaultMumuFormEmoji(players);
   const settings = await getFormEmojiSettings();
   const effectiveSettings = { ...defaultSettings, ...settings };
@@ -173,6 +177,7 @@ export async function handleOpenFormEmojiManagementModal() {
 
   players.forEach((player) => {
     const row = document.createElement("div");
+
     row.style = `
       display:flex;
       justify-content:space-between;
@@ -190,31 +195,41 @@ export async function handleOpenFormEmojiManagementModal() {
     playerName.style.fontWeight = "bold";
 
     const toggleWrap = document.createElement("div");
+
     toggleWrap.style.display = "flex";
     toggleWrap.style.alignItems = "center";
     toggleWrap.style.gap = "8px";
 
     const status = document.createElement("span");
+
     const isEnabled = Boolean(effectiveSettings[String(player.id)] === true);
+
     status.textContent = isEnabled ? "🟢 Activé" : "⚪ Désactivé";
     status.style.color = isEnabled ? "#16a34a" : "#6b7280";
 
     const checkbox = document.createElement("input");
+
     checkbox.type = "checkbox";
     checkbox.checked = isEnabled;
     checkbox.title = `Activer/désactiver les emojis spéciaux pour ${player.name}`;
+
     checkbox.onchange = async () => {
       await setPlayerFormEmojiState(player.id, checkbox.checked);
+
       const updatedSettings = await getFormEmojiSettings();
+
       const newStatus = Boolean(updatedSettings[String(player.id)] === true);
+
       status.textContent = newStatus ? "🟢 Activé" : "⚪ Désactivé";
       status.style.color = newStatus ? "#16a34a" : "#6b7280";
     };
 
     toggleWrap.appendChild(status);
     toggleWrap.appendChild(checkbox);
+
     row.appendChild(playerName);
     row.appendChild(toggleWrap);
+
     list.appendChild(row);
   });
 
@@ -242,7 +257,9 @@ export async function handleConfirmRename() {
 
   if (result.success) {
     Toast.success(result.message);
+
     closeModal("renamePlayerModal");
+
     await loadAdminPlayers();
     await loadRanking();
     await loadMatches();
@@ -257,6 +274,7 @@ window.confirmRename = handleConfirmRename;
 
 export async function loadAdminPlayers() {
   const container = document.getElementById("adminPlayersList");
+
   if (!container) return;
 
   container.innerHTML = "";
@@ -267,6 +285,7 @@ export async function loadAdminPlayers() {
     const isActive = p.active !== false;
 
     const div = document.createElement("div");
+
     div.style = `
       display:flex;
       justify-content:space-between;
@@ -278,11 +297,15 @@ export async function loadAdminPlayers() {
     `;
 
     div.innerHTML = `
-      <span style="font-weight:bold;">${p.name} ${isActive ? "" : "(désactivé)"}</span>
+      <span style="font-weight:bold;">
+        ${p.name} ${isActive ? "" : "(désactivé)"}
+      </span>
+
       <div style="display:flex; gap:8px;">
         <button onclick="openRenameModal('${p.id}', '${p.name}')">
           ✏️ Renommer
         </button>
+
         <button onclick="togglePlayer('${p.id}', ${isActive})">
           ${isActive ? "🚫 Désactiver" : "♻️ Réactiver"}
         </button>
@@ -299,6 +322,7 @@ export async function loadAdminPlayers() {
 
 export function openPlayersModalWithAdminPanel(isAdminUser) {
   const panel = document.getElementById("adminPlayersPanel");
+
   if (!panel) return;
 
   panel.style.display = isAdminUser ? "block" : "none";
@@ -307,6 +331,7 @@ export function openPlayersModalWithAdminPanel(isAdminUser) {
     loadAdminPlayers();
   }
 }
+
 export async function handleRebuildAllStats() {
   if (!confirmAction("⚠️ Recalculer tous les ELO ?")) return;
 
