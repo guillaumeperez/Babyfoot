@@ -74,6 +74,9 @@ export async function deletePearl(id) {
     return id;
   }
 
-  // safeDeleteDoc renvoie null si l'écriture est bloquée (mode test / lock)
-  return await safeDeleteDoc(doc(db, COL, id));
+  const outcome = await safeDeleteDoc(doc(db, COL, id));
+  // deleteDoc résout en undefined (Promise<void>) : seul null = écriture bloquée.
+  // Une exception levée par safeDeleteDoc remonte telle quelle (gestion d'erreur de la page).
+  if (outcome === null) return null;
+  return id;
 }
