@@ -7,8 +7,10 @@
 import {
   getAllPearls,
   addPearl,
+  deletePearl,
 } from "../../repositories/pearls.repository.js";
-import { isTestMode } from "../../core/state.js";
+import { isTestMode, isAdmin } from "../../core/state.js";
+import { confirmAction } from "../components/confirm.js";
 import { Toast } from "../components/toast.js";
 
 // --- État pour éviter les double-clics ---
@@ -43,7 +45,41 @@ export async function loadPearls() {
       li.style.backgroundColor = "#f5f5f5";
       li.style.borderRadius = "6px";
       li.style.borderLeft = "4px solid #9333ea";
-      li.textContent = pearl.text;
+      li.style.display = "flex";
+      li.style.justifyContent = "space-between";
+      li.style.alignItems = "center";
+      li.style.gap = "10px";
+
+      // Texte en DOM sécurisé (jamais d'innerHTML avec du contenu utilisateur)
+      const label = document.createElement("span");
+      label.textContent = pearl.text;
+      label.style.flex = "1";
+      label.style.wordBreak = "break-word";
+      li.appendChild(label);
+
+      // Croix de suppression : réservée à l'administration
+      if (isAdmin()) {
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.textContent = "×";
+        deleteBtn.title = "Supprimer cette perle";
+        deleteBtn.setAttribute("aria-label", "Supprimer cette perle");
+        deleteBtn.style.flex = "0 0 auto";
+        deleteBtn.style.width = "26px";
+        deleteBtn.style.height = "26px";
+        deleteBtn.style.padding = "0";
+        deleteBtn.style.border = "none";
+        deleteBtn.style.borderRadius = "50%";
+        deleteBtn.style.background = "#dc2626";
+        deleteBtn.style.color = "white";
+        deleteBtn.style.fontWeight = "bold";
+        deleteBtn.style.fontSize = "16px";
+        deleteBtn.style.lineHeight = "1";
+        deleteBtn.style.cursor = "pointer";
+        deleteBtn.onclick = () => handleDeletePearl(pearl.id);
+
+        li.appendChild(deleteBtn);
+      }
 
       list.appendChild(li);
     });
@@ -225,5 +261,53 @@ export async function savePearlFromForm() {
     isAddingPearl = false;
 
     if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+// =========================
+// 🗑️ SUPPRESSION D'UNE PERLE
+// =========================
+
+// --- État pour éviter les clics multiples pendant la suppression ---
+let isDeletingPearl = false;
+
+/**
+ * Supprime la perle après confirmation (réservé à l'administration).
+ * En cas d'erreur, la liste est conservée telle quelle.
+ */
+export async function handleDeletePearl(pearlId) {
+  if (!isAdmin()) {
+    Toast.error("❌ Admin requis");
+    return;
+  }
+
+  // Éviter les clics multiples pendant la suppression
+  if (isDeletingPearl) return;
+
+  if (!confirmAction("Voulez-vous vraiment supprimer cette perle ?")) return;
+
+  isDeletingPearl = true;
+
+  try {
+    const result = await deletePearl(pearlId);
+
+    // safeDeleteDoc renvoie null quand l'écriture est bloquée :
+    // on affiche une erreur explicite au lieu d'un faux succès.
+    if (!result) {
+      Toast.error("🛑 Suppression bloquée : la perle n'a PAS été supprimée.");
+      isDeletingPearl = false;
+      return;
+    }
+
+    Toast.success("🗑 Perle supprimée");
+    isDeletingPearl = false;
+    await loadPearls();
+  } catch (error) {
+    console.error("Erreur lors de la suppression de la perle:", error);
+    Toast.error(
+      `Erreur lors de la suppression de la perle : ${error?.message || error}`,
+    );
+    isDeletingPearl = false;
+    // Pas de rechargement : la liste est inchangée, la perle est conservée
   }
 }

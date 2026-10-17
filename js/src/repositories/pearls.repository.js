@@ -8,11 +8,12 @@ import {
   collection,
   query,
   orderBy,
+  doc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { db } from "../core/firebase.client.js";
-import { safeGetDocs, safeAddDoc } from "../core/safe-firebase.js";
+import { safeGetDocs, safeAddDoc, safeDeleteDoc } from "../core/safe-firebase.js";
 import { isTestMode } from "../core/state.js";
 import { APP_CONFIG } from "../config/app.config.js";
 
@@ -62,4 +63,17 @@ export async function addPearl(text) {
     createdAt: serverTimestamp(),
     createdAtLocal: Date.now(),
   });
+}
+
+// --- Supprimer une perle ---
+export async function deletePearl(id) {
+  // Perles locales de mode test (jamais écrites dans Firestore)
+  const idx = _testPearls.findIndex((p) => p.id === id);
+  if (idx !== -1) {
+    _testPearls.splice(idx, 1);
+    return id;
+  }
+
+  // safeDeleteDoc renvoie null si l'écriture est bloquée (mode test / lock)
+  return await safeDeleteDoc(doc(db, COL, id));
 }
