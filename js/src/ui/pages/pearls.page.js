@@ -8,6 +8,7 @@ import {
   getAllPearls,
   addPearl,
 } from "../../repositories/pearls.repository.js";
+import { isTestMode } from "../../core/state.js";
 import { Toast } from "../components/toast.js";
 
 // --- État pour éviter les double-clics ---
@@ -61,6 +62,9 @@ export async function loadPearls() {
 export function handleAddPearl() {
   const container = document.getElementById("pearlsContainer");
   if (!container) return;
+
+  // Repart d'un état propre si un précédent enregistrement était resté bloqué
+  isAddingPearl = false;
 
   container.innerHTML = `
     <div style="
@@ -149,7 +153,12 @@ export async function cancelAddPearl() {
  */
 export async function savePearlFromForm() {
   const input = document.getElementById("pearlInput");
-  if (!input) return;
+  if (!input) {
+    Toast.error(
+      "Formulaire introuvable : ferme et rouvre le modal des perles.",
+    );
+    return;
+  }
 
   const text = input.value;
 
@@ -164,23 +173,55 @@ export async function savePearlFromForm() {
     return;
   }
 
-  // Éviter les double-clics
-  if (isAddingPearl) return;
+  // Éviter les double-clics (message explicite au lieu d'un retour silencieux)
+  if (isAddingPearl) {
+    Toast.error("⏳ Enregistrement en cours, patiente une seconde...");
+    return;
+  }
+
   isAddingPearl = true;
 
   const submitBtn = document.getElementById("submitPearlBtn");
   if (submitBtn) submitBtn.disabled = true;
 
   try {
-    await addPearl(text);
-    Toast.success("💎 Perle ajoutée avec succès !");
+    const cleanText = text.trim();
+
+    // Anti-doublon : cette perle existe-t-elle déjà ?
+    const existingPearls = await getAllPearls();
+    const isDuplicate = existingPearls.some((p) => p.text === cleanText);
+    if (isDuplicate) {
+      Toast.error("❌ Cette perle existe déjà !");
+      isAddingPearl = false;
+      if (submitBtn) submitBtn.disabled = false;
+      return;
+    }
+
+    const pearlId = await addPearl(cleanText);
+
+    // safeAddDoc renvoie null quand l'écriture est bloquée
+    // (FIREBASE_LOCK activé) : on n'affiche surtout pas de faux succès.
+    if (!pearlId) {
+      Toast.error("🛑 Écriture bloquée : la perle n'a PAS été enregistrée.");
+      isAddingPearl = false;
+      if (submitBtn) submitBtn.disabled = false;
+      return;
+    }
+
+    Toast.success(
+      isTestMode()
+        ? "🧪 Perle simulée : visible pour cette session (mode test)"
+        : "💎 Perle ajoutée avec succès !",
+    );
 
     // Réinitialiser
     isAddingPearl = false;
     await loadPearls();
   } catch (error) {
     console.error("Erreur lors de l'ajout de la perle:", error);
-    Toast.error("Erreur lors de l'ajout de la perle");
+    Toast.error(
+      `Erreur lors de l'ajout de la perle : ${error?.message || error}`,
+    );
     isAddingPearl = false;
 
     if (submitBtn) submitBtn.disabled = false;
